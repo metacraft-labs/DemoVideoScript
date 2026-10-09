@@ -1,0 +1,6 @@
+nimcache/
+build/
+*.exe
+.direnv/
+result
+result-*
