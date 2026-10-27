@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Notes</title>
+    <style>
+      body { margin: 0; background: #fff; color: #111; }
+      #app, #probe { font: 16px/20px "DejaVu Sans Mono", monospace; }
+      #app { position: relative; display: inline-block; cursor: default; user-select: none; }
+      .row { height: 20px; white-space: pre; }
+      .rev { background: #111; color: #fff; }
+      .bold { font-weight: bold; }
+      .roles { position: absolute; left: 0; top: 0; pointer-events: none; }
+      .role { position: absolute; pointer-events: none; }
+      #probe { position: absolute; visibility: hidden; }
+    </style>
+  </head>
+  <body>
+    <span id="probe">M</span>
+    <div id="app" tabindex="0"></div>
+    <script src="notes_web.js"></script>
+  </body>
+</html>

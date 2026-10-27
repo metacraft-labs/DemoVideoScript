@@ -22,6 +22,14 @@ build:
     nim c {{nim_flags}} -d:release --nimcache:{{build_dir}}/nimcache/dvs-refapp -o:{{bin}}/dvs-refapp conformance/refapp/dvs_refapp.nim
     nim c {{nim_flags}} -d:release --nimcache:{{build_dir}}/nimcache/dvs-ref -o:{{bin}}/dvs-ref conformance/refapp/dvs_ref.nim
     nim c {{nim_flags}} --nimcache:{{build_dir}}/nimcache/broken-backend -o:{{bin}}/broken-backend tests/support/broken_backend.nim
+    nim c {{nim_flags}} -d:release --nimcache:{{build_dir}}/nimcache/notes-tui -o:{{bin}}/notes-tui conformance/app/notes_tui.nim
+    just build-web
+
+# The conformance application's web build: build/web/{index.html,notes_web.js}.
+build-web:
+    @mkdir -p {{build_dir}}/web
+    nim js {{nim_flags}} -d:release --nimcache:{{build_dir}}/nimcache/notes-web -o:{{build_dir}}/web/notes_web.js conformance/app/notes_web.nim
+    cp conformance/app/web/index.html {{build_dir}}/web/index.html
 
 # Unit suites, the command-line suite against the built binary, and the
 # schema/parser agreement check against independent reference implementations.
