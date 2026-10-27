@@ -15,6 +15,7 @@ longer mean what it meant.
     run-dvsN-mutations.py [--only=ID,...]           grade (writes <name>-mutation-results.txt)
 """
 import hashlib
+import re
 import os
 import subprocess
 import sys
@@ -33,6 +34,16 @@ class Arm:
     why: str
     pre: list = field(default_factory=list)       # commands run after the edit, before the kill command
     restore: list = field(default_factory=list)   # further files the pre-commands rewrite
+
+
+def scrub(text: str, root: Path, build: str) -> str:
+    """Evidence names paths relative to the repository: no machine's directory
+    layout ends up in a committed results file."""
+    text = text.replace(build, "$BUILD_DIR")
+    text = re.sub(r"/tmp/[^\s'\"]*?-mut-[a-z0-9_]+", "$BUILD_DIR", text)
+    text = text.replace(str(root.parent) + "/", "../").replace(str(root) + "/", "")
+    text = re.sub(r"/home/[^\s'\"]*", "<path>", text)
+    return text
 
 
 def sha(p: Path) -> str:
@@ -76,7 +87,7 @@ def main(name: str, root: Path, arms: list, kill: list):
     build = tempfile.mkdtemp(prefix=f"{name}-mut-")
     env = dict(os.environ, BUILD_DIR=build)
     lines = [f"# {name} mutation results — {time.strftime('%Y-%m-%d %H:%M:%S %z')}",
-             f"# kill command: {' '.join(kill)}", ""]
+             f"# kill command: {scrub(' '.join(kill), root, build)}", ""]
     survived = 0
     for a in arms:
         if only and a.id not in only:
@@ -101,7 +112,7 @@ def main(name: str, root: Path, arms: list, kill: list):
         tail = [l for l in (r.stdout + r.stderr).splitlines() if l.strip()][-3:]
         lines.append(f"{verdict:8} {a.id:6} {dt:6.1f}s  {a.why}")
         for t in tail:
-            lines.append(f"           | {t[:160]}")
+            lines.append(f"           | {scrub(t, root, build)[:160]}")
         print(lines[-1 - len(tail)], flush=True)
     for s in subjects:
         assert sha(root / s) == recorded[s], f"{s} was not restored"
