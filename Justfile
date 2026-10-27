@@ -25,6 +25,11 @@ build:
     nim c {{nim_flags}} -d:release --nimcache:{{build_dir}}/nimcache/notes-tui -o:{{bin}}/notes-tui conformance/app/notes_tui.nim
     just build-web
 
+# The conformance application's native-window build (Linux, X11).
+build-x11:
+    @mkdir -p {{bin}}
+    nim c {{nim_flags}} -d:release --nimcache:{{build_dir}}/nimcache/notes-x11 -o:{{bin}}/notes-x11 conformance/app/notes_x11.nim
+
 # The conformance application's web build: build/web/{index.html,notes_web.js}.
 build-web:
     @mkdir -p {{build_dir}}/web

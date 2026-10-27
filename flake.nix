@@ -92,18 +92,22 @@
         in
         {
           devShells.default = pkgs.mkShell {
-            packages = with pkgs; [
-              nim
-              just
-              git
-              referencePython
-              nixfmt-rfc-style
-              editorconfig-checker
-              prettier
-              prek
-              uv
-              shellcheck
-            ];
+            packages =
+              with pkgs;
+              [
+                nim
+                just
+                git
+                referencePython
+                nixfmt-rfc-style
+                editorconfig-checker
+                prettier
+                prek
+                uv
+                shellcheck
+              ]
+              # the conformance application's native-window build (notes-x11)
+              ++ lib.optionals stdenv.isLinux [ xorg.libX11 ];
             shellHook = ''
               ${ownRepoOnly installGitHooks}
               echo "DemoVideoScript dev shell - nim $(nim --version 2>&1 | head -1)"
