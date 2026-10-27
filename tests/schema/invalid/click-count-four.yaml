@@ -1,0 +1,4 @@
+scenario: 1
+name: schema/click-count-four
+steps:
+  - click: { at: search-field, count: 4 }

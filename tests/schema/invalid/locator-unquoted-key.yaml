@@ -1,0 +1,4 @@
+scenario: 1
+name: schema/locator-unquoted-key
+steps:
+  - click: 'note-list/note[title=Groceries]'

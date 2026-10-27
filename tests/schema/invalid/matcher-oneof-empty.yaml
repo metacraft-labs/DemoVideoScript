@@ -1,0 +1,4 @@
+scenario: 1
+name: schema/matcher-oneof-empty
+steps:
+  - expect: { at: note-list, count: { one-of: [] } }

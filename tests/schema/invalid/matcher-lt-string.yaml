@@ -1,0 +1,4 @@
+scenario: 1
+name: schema/matcher-lt-string
+steps:
+  - expect: { at: note-list, count: { lt: three } }

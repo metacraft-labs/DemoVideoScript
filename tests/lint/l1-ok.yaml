@@ -1,0 +1,10 @@
+# expect:
+scenario: 1
+name: lint/l1-ok
+pack: notes-app
+stage:
+  - use: launch-app
+steps:
+  - expect: { at: note-list, count: 3 }
+  - click: search-field
+  - expect: { at: focused, role: search-field }

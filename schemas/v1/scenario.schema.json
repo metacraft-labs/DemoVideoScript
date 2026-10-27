@@ -1,0 +1,2377 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/metacraft-labs/DemoVideoScript/schemas/v1/scenario.schema.json",
+  "title": "DemoVideoScript scenario, format version 1",
+  "type": "object",
+  "required": [
+    "scenario",
+    "name",
+    "steps"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "scenario": {
+      "const": 1
+    },
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*(?:/[a-z0-9][a-z0-9-]*)*$"
+    },
+    "pack": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*$"
+    },
+    "summary": {
+      "type": "string"
+    },
+    "requires": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/name"
+      }
+    },
+    "stage": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/stageCall"
+      }
+    },
+    "steps": {
+      "$ref": "#/$defs/steps"
+    }
+  },
+  "$defs": {
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*$"
+    },
+    "duration": {
+      "oneOf": [
+        {
+          "type": "string",
+          "pattern": "^[0-9]+(?:\\.[0-9]+)?(?:ms|s|m)$"
+        },
+        {
+          "type": "number",
+          "minimum": 0
+        }
+      ]
+    },
+    "locator": {
+      "type": "string",
+      "pattern": "^(?:focused|[a-z][a-z0-9-]*(?:\\[(?:#[1-9][0-9]*|[a-z][a-z0-9-]*=\"(?:[^\"\\\\]|\\\\.)*\"(?:, *[a-z][a-z0-9-]*=\"(?:[^\"\\\\]|\\\\.)*\")*)\\])?)(?:/(?:ancestor\\([a-z][a-z0-9-]*\\)|[a-z][a-z0-9-]*(?:\\[(?:#[1-9][0-9]*|[a-z][a-z0-9-]*=\"(?:[^\"\\\\]|\\\\.)*\"(?:, *[a-z][a-z0-9-]*=\"(?:[^\"\\\\]|\\\\.)*\")*)\\])?))*$"
+    },
+    "anchor": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*(?:\\((?:(?:\"(?:[^\"\\\\]|\\\\.)*\"|-?[0-9]+(?:\\.[0-9]+)?|[A-Za-z0-9_.-]+)(?:, *(?:\"(?:[^\"\\\\]|\\\\.)*\"|-?[0-9]+(?:\\.[0-9]+)?|[A-Za-z0-9_.-]+))*)?\\))?$"
+    },
+    "target": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/locator"
+        },
+        {
+          "type": "object",
+          "required": [
+            "at"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "at": {
+              "$ref": "#/$defs/locator"
+            },
+            "anchor": {
+              "$ref": "#/$defs/anchor"
+            }
+          }
+        }
+      ]
+    },
+    "pace": {
+      "oneOf": [
+        {
+          "enum": [
+            "texting",
+            "quick",
+            "thoughtful",
+            "careful"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "minProperties": 1,
+          "properties": {
+            "preset": {
+              "enum": [
+                "texting",
+                "quick",
+                "thoughtful",
+                "careful"
+              ]
+            },
+            "key-mean": {
+              "$ref": "#/$defs/duration"
+            },
+            "key-sigma": {
+              "type": "number",
+              "minimum": 0
+            },
+            "key-min": {
+              "$ref": "#/$defs/duration"
+            },
+            "key-max": {
+              "$ref": "#/$defs/duration"
+            },
+            "curvature": {
+              "type": "number",
+              "minimum": 0
+            },
+            "overshoot": {
+              "type": "number",
+              "minimum": 0
+            },
+            "commit-pause": {
+              "$ref": "#/$defs/duration"
+            },
+            "seed": {
+              "type": "integer"
+            }
+          }
+        }
+      ]
+    },
+    "button": {
+      "enum": [
+        "left",
+        "right",
+        "middle"
+      ]
+    },
+    "modifiers": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "Ctrl",
+          "Shift",
+          "Alt",
+          "Meta",
+          "Mod"
+        ]
+      }
+    },
+    "key": {
+      "type": "string",
+      "pattern": "^(?:Enter|Esc|Tab|Backspace|Delete|Insert|Home|End|PageUp|PageDown|Up|Down|Left|Right|Space|Plus|Ctrl|Shift|Alt|Meta|Mod|F24|F23|F22|F21|F20|F19|F18|F17|F16|F15|F14|F13|F12|F11|F10|F9|F8|F7|F6|F5|F4|F3|F2|F1|[^\\x00-\\x20\\x7f+])$"
+    },
+    "chord": {
+      "type": "string",
+      "pattern": "^(?:(?:Ctrl|Shift|Alt|Meta|Mod)\\+)*(?:Enter|Esc|Tab|Backspace|Delete|Insert|Home|End|PageUp|PageDown|Up|Down|Left|Right|Space|Plus|Ctrl|Shift|Alt|Meta|Mod|F24|F23|F22|F21|F20|F19|F18|F17|F16|F15|F14|F13|F12|F11|F10|F9|F8|F7|F6|F5|F4|F3|F2|F1|[^\\x00-\\x20\\x7f+])(?: (?:(?:Ctrl|Shift|Alt|Meta|Mod)\\+)*(?:Enter|Esc|Tab|Backspace|Delete|Insert|Home|End|PageUp|PageDown|Up|Down|Left|Right|Space|Plus|Ctrl|Shift|Alt|Meta|Mod|F24|F23|F22|F21|F20|F19|F18|F17|F16|F15|F14|F13|F12|F11|F10|F9|F8|F7|F6|F5|F4|F3|F2|F1|[^\\x00-\\x20\\x7f+]))*$"
+    },
+    "span": {
+      "type": "object",
+      "required": [
+        "text"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "text": {
+          "type": "string"
+        },
+        "from": {
+          "$ref": "#/$defs/name"
+        },
+        "to": {
+          "$ref": "#/$defs/name"
+        },
+        "voice": {
+          "type": "string"
+        },
+        "style": {
+          "type": "string"
+        }
+      }
+    },
+    "callout": {
+      "type": "object",
+      "required": [
+        "at",
+        "text"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "at": {
+          "$ref": "#/$defs/locator"
+        },
+        "anchor": {
+          "$ref": "#/$defs/anchor"
+        },
+        "text": {
+          "type": "string"
+        },
+        "from": {
+          "$ref": "#/$defs/name"
+        },
+        "to": {
+          "$ref": "#/$defs/name"
+        }
+      }
+    },
+    "matcher": {
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        },
+        {
+          "type": "array"
+        },
+        {
+          "type": "object",
+          "minProperties": 1,
+          "maxProperties": 1,
+          "additionalProperties": false,
+          "properties": {
+            "equals": {},
+            "contains": {},
+            "matches": {
+              "type": "string"
+            },
+            "one-of": {
+              "type": "array",
+              "minItems": 1
+            },
+            "lt": {
+              "type": "number"
+            },
+            "le": {
+              "type": "number"
+            },
+            "gt": {
+              "type": "number"
+            },
+            "ge": {
+              "type": "number"
+            },
+            "count": {
+              "$ref": "#/$defs/matcher"
+            },
+            "subsequence": {
+              "type": "array"
+            },
+            "unordered": {
+              "type": "array"
+            }
+          }
+        }
+      ]
+    },
+    "geometry": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": false,
+      "properties": {
+        "above": {
+          "$ref": "#/$defs/locator"
+        },
+        "below": {
+          "$ref": "#/$defs/locator"
+        },
+        "left-of": {
+          "$ref": "#/$defs/locator"
+        },
+        "right-of": {
+          "$ref": "#/$defs/locator"
+        },
+        "inside": {
+          "$ref": "#/$defs/locator"
+        },
+        "overlaps": {
+          "$ref": "#/$defs/locator"
+        },
+        "aligned-left": {
+          "$ref": "#/$defs/locator"
+        },
+        "aligned-top": {
+          "$ref": "#/$defs/locator"
+        },
+        "spans-width-of": {
+          "$ref": "#/$defs/locator"
+        },
+        "spans-height-of": {
+          "$ref": "#/$defs/locator"
+        },
+        "visible": {
+          "type": "boolean"
+        }
+      }
+    },
+    "invocation": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*(?:\\((?:(?:\"(?:[^\"\\\\]|\\\\.)*\"|-?[0-9]+(?:\\.[0-9]+)?|[A-Za-z0-9_.-]+)(?:, *(?:\"(?:[^\"\\\\]|\\\\.)*\"|-?[0-9]+(?:\\.[0-9]+)?|[A-Za-z0-9_.-]+))*)?\\))?$"
+    },
+    "observation": {
+      "type": "object",
+      "required": [
+        "at"
+      ],
+      "properties": {
+        "at": {
+          "$ref": "#/$defs/locator"
+        },
+        "assert": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/invocation"
+            },
+            {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/$defs/invocation"
+              }
+            }
+          ]
+        },
+        "geometry": {
+          "$ref": "#/$defs/geometry"
+        },
+        "role": {
+          "$ref": "#/$defs/name"
+        },
+        "absent": {
+          "type": "boolean"
+        },
+        "present": {
+          "type": "boolean"
+        }
+      },
+      "patternProperties": {
+        "^(?!(?:at|assert|geometry|role|absent|present)$)[a-z][a-z0-9-]*$": {
+          "$ref": "#/$defs/matcher"
+        }
+      },
+      "additionalProperties": false
+    },
+    "until": {
+      "oneOf": [
+        {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*(?:\\.[a-z][a-z0-9-]*)*$"
+        },
+        {
+          "$ref": "#/$defs/observation"
+        }
+      ]
+    },
+    "step": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "key"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "key": {
+              "$ref": "#/$defs/key"
+            },
+            "settle": {
+              "type": "boolean"
+            },
+            "id": {
+              "$ref": "#/$defs/name"
+            },
+            "lead-in": {
+              "$ref": "#/$defs/duration"
+            },
+            "dwell": {
+              "$ref": "#/$defs/duration"
+            },
+            "chapter": {
+              "type": "string"
+            },
+            "narration": {
+              "$ref": "#/$defs/span"
+            },
+            "caption": {
+              "$ref": "#/$defs/span"
+            },
+            "callout": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/callout"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/callout"
+                  }
+                }
+              ]
+            },
+            "alternatives": {
+              "type": "object",
+              "minProperties": 1,
+              "additionalProperties": false,
+              "properties": {
+                "input.key": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.chord": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.text": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.pointer.move": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.pointer.click": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.pointer.drag": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.wheel": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.hover": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.text": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.geometry": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.style": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.image": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.focus": {
+                  "$ref": "#/$defs/steps"
+                },
+                "sync.event": {
+                  "$ref": "#/$defs/steps"
+                },
+                "sync.visual-settle": {
+                  "$ref": "#/$defs/steps"
+                },
+                "record.cast": {
+                  "$ref": "#/$defs/steps"
+                },
+                "record.video": {
+                  "$ref": "#/$defs/steps"
+                },
+                "record.still": {
+                  "$ref": "#/$defs/steps"
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "chord"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "chord": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/chord"
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "bound"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "bound": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9-]*(?:\\.[a-z][a-z0-9-]*)*$"
+                    }
+                  }
+                }
+              ]
+            },
+            "settle": {
+              "type": "boolean"
+            },
+            "id": {
+              "$ref": "#/$defs/name"
+            },
+            "lead-in": {
+              "$ref": "#/$defs/duration"
+            },
+            "dwell": {
+              "$ref": "#/$defs/duration"
+            },
+            "chapter": {
+              "type": "string"
+            },
+            "narration": {
+              "$ref": "#/$defs/span"
+            },
+            "caption": {
+              "$ref": "#/$defs/span"
+            },
+            "callout": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/callout"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/callout"
+                  }
+                }
+              ]
+            },
+            "alternatives": {
+              "type": "object",
+              "minProperties": 1,
+              "additionalProperties": false,
+              "properties": {
+                "input.key": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.chord": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.text": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.pointer.move": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.pointer.click": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.pointer.drag": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.wheel": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.hover": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.text": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.geometry": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.style": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.image": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.focus": {
+                  "$ref": "#/$defs/steps"
+                },
+                "sync.event": {
+                  "$ref": "#/$defs/steps"
+                },
+                "sync.visual-settle": {
+                  "$ref": "#/$defs/steps"
+                },
+                "record.cast": {
+                  "$ref": "#/$defs/steps"
+                },
+                "record.video": {
+                  "$ref": "#/$defs/steps"
+                },
+                "record.still": {
+                  "$ref": "#/$defs/steps"
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "type"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "text"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "text": {
+                      "type": "string"
+                    },
+                    "pace": {
+                      "$ref": "#/$defs/pace"
+                    }
+                  }
+                }
+              ]
+            },
+            "settle": {
+              "type": "boolean"
+            },
+            "id": {
+              "$ref": "#/$defs/name"
+            },
+            "lead-in": {
+              "$ref": "#/$defs/duration"
+            },
+            "dwell": {
+              "$ref": "#/$defs/duration"
+            },
+            "chapter": {
+              "type": "string"
+            },
+            "narration": {
+              "$ref": "#/$defs/span"
+            },
+            "caption": {
+              "$ref": "#/$defs/span"
+            },
+            "callout": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/callout"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/callout"
+                  }
+                }
+              ]
+            },
+            "alternatives": {
+              "type": "object",
+              "minProperties": 1,
+              "additionalProperties": false,
+              "properties": {
+                "input.key": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.chord": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.text": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.pointer.move": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.pointer.click": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.pointer.drag": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.wheel": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.hover": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.text": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.geometry": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.style": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.image": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.focus": {
+                  "$ref": "#/$defs/steps"
+                },
+                "sync.event": {
+                  "$ref": "#/$defs/steps"
+                },
+                "sync.visual-settle": {
+                  "$ref": "#/$defs/steps"
+                },
+                "record.cast": {
+                  "$ref": "#/$defs/steps"
+                },
+                "record.video": {
+                  "$ref": "#/$defs/steps"
+                },
+                "record.still": {
+                  "$ref": "#/$defs/steps"
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "press"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "press": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/key"
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "key"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "key": {
+                      "$ref": "#/$defs/key"
+                    }
+                  }
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "at"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "at": {
+                      "$ref": "#/$defs/locator"
+                    },
+                    "anchor": {
+                      "$ref": "#/$defs/anchor"
+                    },
+                    "button": {
+                      "$ref": "#/$defs/button"
+                    }
+                  }
+                }
+              ]
+            },
+            "settle": {
+              "type": "boolean"
+            },
+            "id": {
+              "$ref": "#/$defs/name"
+            },
+            "lead-in": {
+              "$ref": "#/$defs/duration"
+            },
+            "dwell": {
+              "$ref": "#/$defs/duration"
+            },
+            "chapter": {
+              "type": "string"
+            },
+            "narration": {
+              "$ref": "#/$defs/span"
+            },
+            "caption": {
+              "$ref": "#/$defs/span"
+            },
+            "callout": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/callout"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/callout"
+                  }
+                }
+              ]
+            },
+            "alternatives": {
+              "type": "object",
+              "minProperties": 1,
+              "additionalProperties": false,
+              "properties": {
+                "input.key": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.chord": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.text": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.pointer.move": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.pointer.click": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.pointer.drag": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.wheel": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.hover": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.text": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.geometry": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.style": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.image": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.focus": {
+                  "$ref": "#/$defs/steps"
+                },
+                "sync.event": {
+                  "$ref": "#/$defs/steps"
+                },
+                "sync.visual-settle": {
+                  "$ref": "#/$defs/steps"
+                },
+                "record.cast": {
+                  "$ref": "#/$defs/steps"
+                },
+                "record.video": {
+                  "$ref": "#/$defs/steps"
+                },
+                "record.still": {
+                  "$ref": "#/$defs/steps"
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "release"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "release": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/key"
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "key"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "key": {
+                      "$ref": "#/$defs/key"
+                    }
+                  }
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "at"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "at": {
+                      "$ref": "#/$defs/locator"
+                    },
+                    "anchor": {
+                      "$ref": "#/$defs/anchor"
+                    },
+                    "button": {
+                      "$ref": "#/$defs/button"
+                    }
+                  }
+                }
+              ]
+            },
+            "settle": {
+              "type": "boolean"
+            },
+            "id": {
+              "$ref": "#/$defs/name"
+            },
+            "lead-in": {
+              "$ref": "#/$defs/duration"
+            },
+            "dwell": {
+              "$ref": "#/$defs/duration"
+            },
+            "chapter": {
+              "type": "string"
+            },
+            "narration": {
+              "$ref": "#/$defs/span"
+            },
+            "caption": {
+              "$ref": "#/$defs/span"
+            },
+            "callout": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/callout"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/callout"
+                  }
+                }
+              ]
+            },
+            "alternatives": {
+              "type": "object",
+              "minProperties": 1,
+              "additionalProperties": false,
+              "properties": {
+                "input.key": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.chord": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.text": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.pointer.move": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.pointer.click": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.pointer.drag": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.wheel": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.hover": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.text": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.geometry": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.style": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.image": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.focus": {
+                  "$ref": "#/$defs/steps"
+                },
+                "sync.event": {
+                  "$ref": "#/$defs/steps"
+                },
+                "sync.visual-settle": {
+                  "$ref": "#/$defs/steps"
+                },
+                "record.cast": {
+                  "$ref": "#/$defs/steps"
+                },
+                "record.video": {
+                  "$ref": "#/$defs/steps"
+                },
+                "record.still": {
+                  "$ref": "#/$defs/steps"
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "move"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "move": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/locator"
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "at"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "at": {
+                      "$ref": "#/$defs/locator"
+                    },
+                    "anchor": {
+                      "$ref": "#/$defs/anchor"
+                    },
+                    "pace": {
+                      "$ref": "#/$defs/pace"
+                    }
+                  }
+                }
+              ]
+            },
+            "settle": {
+              "type": "boolean"
+            },
+            "id": {
+              "$ref": "#/$defs/name"
+            },
+            "lead-in": {
+              "$ref": "#/$defs/duration"
+            },
+            "dwell": {
+              "$ref": "#/$defs/duration"
+            },
+            "chapter": {
+              "type": "string"
+            },
+            "narration": {
+              "$ref": "#/$defs/span"
+            },
+            "caption": {
+              "$ref": "#/$defs/span"
+            },
+            "callout": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/callout"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/callout"
+                  }
+                }
+              ]
+            },
+            "alternatives": {
+              "type": "object",
+              "minProperties": 1,
+              "additionalProperties": false,
+              "properties": {
+                "input.key": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.chord": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.text": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.pointer.move": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.pointer.click": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.pointer.drag": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.wheel": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.hover": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.text": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.geometry": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.style": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.image": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.focus": {
+                  "$ref": "#/$defs/steps"
+                },
+                "sync.event": {
+                  "$ref": "#/$defs/steps"
+                },
+                "sync.visual-settle": {
+                  "$ref": "#/$defs/steps"
+                },
+                "record.cast": {
+                  "$ref": "#/$defs/steps"
+                },
+                "record.video": {
+                  "$ref": "#/$defs/steps"
+                },
+                "record.still": {
+                  "$ref": "#/$defs/steps"
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "hover"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "hover": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/locator"
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "at"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "at": {
+                      "$ref": "#/$defs/locator"
+                    },
+                    "anchor": {
+                      "$ref": "#/$defs/anchor"
+                    },
+                    "for": {
+                      "$ref": "#/$defs/duration"
+                    },
+                    "pace": {
+                      "$ref": "#/$defs/pace"
+                    }
+                  }
+                }
+              ]
+            },
+            "settle": {
+              "type": "boolean"
+            },
+            "id": {
+              "$ref": "#/$defs/name"
+            },
+            "lead-in": {
+              "$ref": "#/$defs/duration"
+            },
+            "dwell": {
+              "$ref": "#/$defs/duration"
+            },
+            "chapter": {
+              "type": "string"
+            },
+            "narration": {
+              "$ref": "#/$defs/span"
+            },
+            "caption": {
+              "$ref": "#/$defs/span"
+            },
+            "callout": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/callout"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/callout"
+                  }
+                }
+              ]
+            },
+            "alternatives": {
+              "type": "object",
+              "minProperties": 1,
+              "additionalProperties": false,
+              "properties": {
+                "input.key": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.chord": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.text": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.pointer.move": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.pointer.click": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.pointer.drag": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.wheel": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.hover": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.text": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.geometry": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.style": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.image": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.focus": {
+                  "$ref": "#/$defs/steps"
+                },
+                "sync.event": {
+                  "$ref": "#/$defs/steps"
+                },
+                "sync.visual-settle": {
+                  "$ref": "#/$defs/steps"
+                },
+                "record.cast": {
+                  "$ref": "#/$defs/steps"
+                },
+                "record.video": {
+                  "$ref": "#/$defs/steps"
+                },
+                "record.still": {
+                  "$ref": "#/$defs/steps"
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "click"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "click": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/locator"
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "at"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "at": {
+                      "$ref": "#/$defs/locator"
+                    },
+                    "anchor": {
+                      "$ref": "#/$defs/anchor"
+                    },
+                    "button": {
+                      "$ref": "#/$defs/button"
+                    },
+                    "count": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 3
+                    },
+                    "modifiers": {
+                      "$ref": "#/$defs/modifiers"
+                    },
+                    "pace": {
+                      "$ref": "#/$defs/pace"
+                    }
+                  }
+                }
+              ]
+            },
+            "settle": {
+              "type": "boolean"
+            },
+            "id": {
+              "$ref": "#/$defs/name"
+            },
+            "lead-in": {
+              "$ref": "#/$defs/duration"
+            },
+            "dwell": {
+              "$ref": "#/$defs/duration"
+            },
+            "chapter": {
+              "type": "string"
+            },
+            "narration": {
+              "$ref": "#/$defs/span"
+            },
+            "caption": {
+              "$ref": "#/$defs/span"
+            },
+            "callout": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/callout"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/callout"
+                  }
+                }
+              ]
+            },
+            "alternatives": {
+              "type": "object",
+              "minProperties": 1,
+              "additionalProperties": false,
+              "properties": {
+                "input.key": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.chord": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.text": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.pointer.move": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.pointer.click": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.pointer.drag": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.wheel": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.hover": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.text": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.geometry": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.style": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.image": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.focus": {
+                  "$ref": "#/$defs/steps"
+                },
+                "sync.event": {
+                  "$ref": "#/$defs/steps"
+                },
+                "sync.visual-settle": {
+                  "$ref": "#/$defs/steps"
+                },
+                "record.cast": {
+                  "$ref": "#/$defs/steps"
+                },
+                "record.video": {
+                  "$ref": "#/$defs/steps"
+                },
+                "record.still": {
+                  "$ref": "#/$defs/steps"
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "drag"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "drag": {
+              "type": "object",
+              "required": [
+                "from",
+                "to"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "from": {
+                  "$ref": "#/$defs/target"
+                },
+                "to": {
+                  "$ref": "#/$defs/target"
+                },
+                "via": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/target"
+                  }
+                },
+                "button": {
+                  "$ref": "#/$defs/button"
+                },
+                "modifiers": {
+                  "$ref": "#/$defs/modifiers"
+                },
+                "pace": {
+                  "$ref": "#/$defs/pace"
+                }
+              }
+            },
+            "settle": {
+              "type": "boolean"
+            },
+            "id": {
+              "$ref": "#/$defs/name"
+            },
+            "lead-in": {
+              "$ref": "#/$defs/duration"
+            },
+            "dwell": {
+              "$ref": "#/$defs/duration"
+            },
+            "chapter": {
+              "type": "string"
+            },
+            "narration": {
+              "$ref": "#/$defs/span"
+            },
+            "caption": {
+              "$ref": "#/$defs/span"
+            },
+            "callout": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/callout"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/callout"
+                  }
+                }
+              ]
+            },
+            "alternatives": {
+              "type": "object",
+              "minProperties": 1,
+              "additionalProperties": false,
+              "properties": {
+                "input.key": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.chord": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.text": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.pointer.move": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.pointer.click": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.pointer.drag": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.wheel": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.hover": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.text": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.geometry": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.style": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.image": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.focus": {
+                  "$ref": "#/$defs/steps"
+                },
+                "sync.event": {
+                  "$ref": "#/$defs/steps"
+                },
+                "sync.visual-settle": {
+                  "$ref": "#/$defs/steps"
+                },
+                "record.cast": {
+                  "$ref": "#/$defs/steps"
+                },
+                "record.video": {
+                  "$ref": "#/$defs/steps"
+                },
+                "record.still": {
+                  "$ref": "#/$defs/steps"
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "wheel"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "wheel": {
+              "type": "object",
+              "required": [
+                "at",
+                "direction"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "at": {
+                  "$ref": "#/$defs/locator"
+                },
+                "anchor": {
+                  "$ref": "#/$defs/anchor"
+                },
+                "direction": {
+                  "enum": [
+                    "up",
+                    "down",
+                    "left",
+                    "right"
+                  ]
+                },
+                "amount": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            },
+            "settle": {
+              "type": "boolean"
+            },
+            "id": {
+              "$ref": "#/$defs/name"
+            },
+            "lead-in": {
+              "$ref": "#/$defs/duration"
+            },
+            "dwell": {
+              "$ref": "#/$defs/duration"
+            },
+            "chapter": {
+              "type": "string"
+            },
+            "narration": {
+              "$ref": "#/$defs/span"
+            },
+            "caption": {
+              "$ref": "#/$defs/span"
+            },
+            "callout": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/callout"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/callout"
+                  }
+                }
+              ]
+            },
+            "alternatives": {
+              "type": "object",
+              "minProperties": 1,
+              "additionalProperties": false,
+              "properties": {
+                "input.key": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.chord": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.text": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.pointer.move": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.pointer.click": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.pointer.drag": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.wheel": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.hover": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.text": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.geometry": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.style": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.image": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.focus": {
+                  "$ref": "#/$defs/steps"
+                },
+                "sync.event": {
+                  "$ref": "#/$defs/steps"
+                },
+                "sync.visual-settle": {
+                  "$ref": "#/$defs/steps"
+                },
+                "record.cast": {
+                  "$ref": "#/$defs/steps"
+                },
+                "record.video": {
+                  "$ref": "#/$defs/steps"
+                },
+                "record.still": {
+                  "$ref": "#/$defs/steps"
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "expect"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "expect": {
+              "$ref": "#/$defs/observation"
+            },
+            "id": {
+              "$ref": "#/$defs/name"
+            },
+            "lead-in": {
+              "$ref": "#/$defs/duration"
+            },
+            "dwell": {
+              "$ref": "#/$defs/duration"
+            },
+            "chapter": {
+              "type": "string"
+            },
+            "narration": {
+              "$ref": "#/$defs/span"
+            },
+            "caption": {
+              "$ref": "#/$defs/span"
+            },
+            "callout": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/callout"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/callout"
+                  }
+                }
+              ]
+            },
+            "alternatives": {
+              "type": "object",
+              "minProperties": 1,
+              "additionalProperties": false,
+              "properties": {
+                "input.key": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.chord": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.text": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.pointer.move": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.pointer.click": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.pointer.drag": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.wheel": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.hover": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.text": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.geometry": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.style": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.image": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.focus": {
+                  "$ref": "#/$defs/steps"
+                },
+                "sync.event": {
+                  "$ref": "#/$defs/steps"
+                },
+                "sync.visual-settle": {
+                  "$ref": "#/$defs/steps"
+                },
+                "record.cast": {
+                  "$ref": "#/$defs/steps"
+                },
+                "record.video": {
+                  "$ref": "#/$defs/steps"
+                },
+                "record.still": {
+                  "$ref": "#/$defs/steps"
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "wait"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "wait": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9-]*(?:\\.[a-z][a-z0-9-]*)*$"
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "until"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "until": {
+                      "$ref": "#/$defs/until"
+                    },
+                    "timeout": {
+                      "$ref": "#/$defs/duration"
+                    }
+                  }
+                }
+              ]
+            },
+            "id": {
+              "$ref": "#/$defs/name"
+            },
+            "lead-in": {
+              "$ref": "#/$defs/duration"
+            },
+            "dwell": {
+              "$ref": "#/$defs/duration"
+            },
+            "chapter": {
+              "type": "string"
+            },
+            "narration": {
+              "$ref": "#/$defs/span"
+            },
+            "caption": {
+              "$ref": "#/$defs/span"
+            },
+            "callout": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/callout"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/callout"
+                  }
+                }
+              ]
+            },
+            "alternatives": {
+              "type": "object",
+              "minProperties": 1,
+              "additionalProperties": false,
+              "properties": {
+                "input.key": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.chord": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.text": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.pointer.move": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.pointer.click": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.pointer.drag": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.wheel": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.hover": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.text": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.geometry": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.style": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.image": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.focus": {
+                  "$ref": "#/$defs/steps"
+                },
+                "sync.event": {
+                  "$ref": "#/$defs/steps"
+                },
+                "sync.visual-settle": {
+                  "$ref": "#/$defs/steps"
+                },
+                "record.cast": {
+                  "$ref": "#/$defs/steps"
+                },
+                "record.video": {
+                  "$ref": "#/$defs/steps"
+                },
+                "record.still": {
+                  "$ref": "#/$defs/steps"
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "flow"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "flow": {
+              "$ref": "#/$defs/name"
+            },
+            "with": {
+              "type": "object"
+            },
+            "id": {
+              "$ref": "#/$defs/name"
+            },
+            "lead-in": {
+              "$ref": "#/$defs/duration"
+            },
+            "dwell": {
+              "$ref": "#/$defs/duration"
+            },
+            "chapter": {
+              "type": "string"
+            },
+            "narration": {
+              "$ref": "#/$defs/span"
+            },
+            "caption": {
+              "$ref": "#/$defs/span"
+            },
+            "callout": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/callout"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/callout"
+                  }
+                }
+              ]
+            },
+            "alternatives": {
+              "type": "object",
+              "minProperties": 1,
+              "additionalProperties": false,
+              "properties": {
+                "input.key": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.chord": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.text": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.pointer.move": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.pointer.click": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.pointer.drag": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.wheel": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.hover": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.text": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.geometry": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.style": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.image": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.focus": {
+                  "$ref": "#/$defs/steps"
+                },
+                "sync.event": {
+                  "$ref": "#/$defs/steps"
+                },
+                "sync.visual-settle": {
+                  "$ref": "#/$defs/steps"
+                },
+                "record.cast": {
+                  "$ref": "#/$defs/steps"
+                },
+                "record.video": {
+                  "$ref": "#/$defs/steps"
+                },
+                "record.still": {
+                  "$ref": "#/$defs/steps"
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "beat",
+            "steps"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "beat": {
+              "$ref": "#/$defs/name"
+            },
+            "steps": {
+              "$ref": "#/$defs/steps"
+            },
+            "id": {
+              "$ref": "#/$defs/name"
+            },
+            "lead-in": {
+              "$ref": "#/$defs/duration"
+            },
+            "dwell": {
+              "$ref": "#/$defs/duration"
+            },
+            "chapter": {
+              "type": "string"
+            },
+            "narration": {
+              "$ref": "#/$defs/span"
+            },
+            "caption": {
+              "$ref": "#/$defs/span"
+            },
+            "callout": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/callout"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/callout"
+                  }
+                }
+              ]
+            },
+            "alternatives": {
+              "type": "object",
+              "minProperties": 1,
+              "additionalProperties": false,
+              "properties": {
+                "input.key": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.chord": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.text": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.pointer.move": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.pointer.click": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.pointer.drag": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.wheel": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.hover": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.text": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.geometry": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.style": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.image": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.focus": {
+                  "$ref": "#/$defs/steps"
+                },
+                "sync.event": {
+                  "$ref": "#/$defs/steps"
+                },
+                "sync.visual-settle": {
+                  "$ref": "#/$defs/steps"
+                },
+                "record.cast": {
+                  "$ref": "#/$defs/steps"
+                },
+                "record.video": {
+                  "$ref": "#/$defs/steps"
+                },
+                "record.still": {
+                  "$ref": "#/$defs/steps"
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "capture"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "capture": {
+              "type": "object",
+              "required": [
+                "name"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "name": {
+                  "$ref": "#/$defs/name"
+                },
+                "of": {
+                  "$ref": "#/$defs/locator"
+                }
+              }
+            },
+            "id": {
+              "$ref": "#/$defs/name"
+            },
+            "lead-in": {
+              "$ref": "#/$defs/duration"
+            },
+            "dwell": {
+              "$ref": "#/$defs/duration"
+            },
+            "chapter": {
+              "type": "string"
+            },
+            "narration": {
+              "$ref": "#/$defs/span"
+            },
+            "caption": {
+              "$ref": "#/$defs/span"
+            },
+            "callout": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/callout"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/callout"
+                  }
+                }
+              ]
+            },
+            "alternatives": {
+              "type": "object",
+              "minProperties": 1,
+              "additionalProperties": false,
+              "properties": {
+                "input.key": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.chord": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.text": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.pointer.move": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.pointer.click": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.pointer.drag": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.wheel": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.hover": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.text": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.geometry": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.style": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.image": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.focus": {
+                  "$ref": "#/$defs/steps"
+                },
+                "sync.event": {
+                  "$ref": "#/$defs/steps"
+                },
+                "sync.visual-settle": {
+                  "$ref": "#/$defs/steps"
+                },
+                "record.cast": {
+                  "$ref": "#/$defs/steps"
+                },
+                "record.video": {
+                  "$ref": "#/$defs/steps"
+                },
+                "record.still": {
+                  "$ref": "#/$defs/steps"
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "ext"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "ext": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9-]*\\.[a-z][a-z0-9-]*(?:\\.[a-z][a-z0-9-]*)*$"
+            },
+            "with": {
+              "type": "object"
+            },
+            "id": {
+              "$ref": "#/$defs/name"
+            },
+            "lead-in": {
+              "$ref": "#/$defs/duration"
+            },
+            "dwell": {
+              "$ref": "#/$defs/duration"
+            },
+            "chapter": {
+              "type": "string"
+            },
+            "narration": {
+              "$ref": "#/$defs/span"
+            },
+            "caption": {
+              "$ref": "#/$defs/span"
+            },
+            "callout": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/callout"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/callout"
+                  }
+                }
+              ]
+            },
+            "alternatives": {
+              "type": "object",
+              "minProperties": 1,
+              "additionalProperties": false,
+              "properties": {
+                "input.key": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.chord": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.text": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.pointer.move": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.pointer.click": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.pointer.drag": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.wheel": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.hover": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.text": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.geometry": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.style": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.image": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.focus": {
+                  "$ref": "#/$defs/steps"
+                },
+                "sync.event": {
+                  "$ref": "#/$defs/steps"
+                },
+                "sync.visual-settle": {
+                  "$ref": "#/$defs/steps"
+                },
+                "record.cast": {
+                  "$ref": "#/$defs/steps"
+                },
+                "record.video": {
+                  "$ref": "#/$defs/steps"
+                },
+                "record.still": {
+                  "$ref": "#/$defs/steps"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "steps": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/step"
+      }
+    },
+    "stageCall": {
+      "type": "object",
+      "required": [
+        "use"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "use": {
+          "$ref": "#/$defs/name"
+        },
+        "with": {
+          "type": "object"
+        }
+      }
+    }
+  }
+}

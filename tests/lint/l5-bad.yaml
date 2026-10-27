@@ -1,0 +1,13 @@
+# expect: L5:10 L5:13
+scenario: 1
+name: lint/l5-bad
+pack: notes-app
+stage:
+  - use: launch-app
+steps:
+  - click: 'note-list/note[title="Taxes"]'
+    settle: false
+  - expect: { at: 'note-list/note[title="Taxes"]', selected: true }
+  - key: Down
+    settle: false
+  - expect: { at: 'note-list/note[title="Groceries"]', selected: true }

@@ -1,0 +1,8 @@
+# expect:
+scenario: 1
+name: lint/l4-ok
+pack: notes-app
+stage:
+  - use: launch-app
+steps:
+  - click: note-list/note[title="Taxes"]

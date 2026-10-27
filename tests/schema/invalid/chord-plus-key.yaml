@@ -1,0 +1,4 @@
+scenario: 1
+name: schema/chord-plus-key
+steps:
+  - chord: Ctrl++

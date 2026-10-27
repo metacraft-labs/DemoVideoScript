@@ -1,0 +1,9 @@
+# expect: L8:8
+scenario: 1
+name: lint/l8-bad
+pack: notes-app
+stage:
+  - use: launch-app
+steps:
+  - ext: termassert.golden
+    with: { file: goldens/list.txt }

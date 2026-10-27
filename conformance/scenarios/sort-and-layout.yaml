@@ -1,0 +1,37 @@
+scenario: 1
+name: notes/sort-and-layout
+pack: notes-app
+summary: Sorting orders the notes by title; the toolbar sits above the list, inside the window.
+
+stage:
+  - use: seed-notes
+    with: { fixture: fixtures/three-notes.json }
+  - use: launch-app
+
+steps:
+  - expect:
+      at: toolbar
+      geometry: { above: note-list, spans-width-of: window, aligned-left: note-list }
+  - expect:
+      at: note-list
+      geometry: { below: toolbar, inside: window, aligned-left: toolbar }
+  - expect:
+      at: 'note-list/note[title="Taxes"]'
+      geometry: { inside: note-list, visible: true, above: 'note-list/note[title="Groceries"]' }
+  - expect:
+      at: search-field
+      geometry: { above: note-list, overlaps: window, aligned-top: search-field }
+  - expect:
+      at: status-bar
+      geometry: { below: note-list, spans-width-of: window, spans-height-of: status-bar }
+  - expect:
+      at: toolbar/toolbar-button[label="Sort"]
+      geometry: { left-of: 'toolbar/toolbar-button[label="Filter"]', inside: toolbar }
+  - expect:
+      at: 'toolbar/toolbar-button[label="Filter"]'
+      geometry: { right-of: 'toolbar/toolbar-button[label="Sort"]' }
+  - click: 'toolbar/toolbar-button[label="Sort"]'
+  - wait: { until: "note-list.loaded" , timeout: 5s }
+  - expect: { at: note-list, assert: "sorted-by(title)" }
+  - expect: { at: note-list, order: [Groceries, Recipes, Taxes] }
+  - expect: { at: note-list, assert: [none-selected, "at-most(3)"] }

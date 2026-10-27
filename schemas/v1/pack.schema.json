@@ -1,0 +1,188 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/metacraft-labs/DemoVideoScript/schemas/v1/pack.schema.json",
+  "title": "DemoVideoScript pack (backend-neutral part), format version 1",
+  "type": "object",
+  "required": [
+    "pack",
+    "name",
+    "root",
+    "roles"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "pack": {
+      "const": 1
+    },
+    "name": {
+      "$ref": "#/$defs/name"
+    },
+    "summary": {
+      "type": "string"
+    },
+    "root": {
+      "$ref": "#/$defs/name"
+    },
+    "roles": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": false,
+      "patternProperties": {
+        "^[a-z][a-z0-9-]*$": {
+          "$ref": "#/$defs/role"
+        }
+      }
+    },
+    "sync": {
+      "$ref": "#/$defs/syncMap"
+    },
+    "flows": {
+      "type": "object",
+      "additionalProperties": false,
+      "$comment": "flow bodies are checked after parameter substitution (lint L11)",
+      "patternProperties": {
+        "^[a-z][a-z0-9-]*(?:\\((?:[a-z][a-z0-9-]*(?:, *[a-z][a-z0-9-]*)*)?\\))?$": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        }
+      }
+    },
+    "stages": {
+      "type": "object",
+      "additionalProperties": false,
+      "patternProperties": {
+        "^[a-z][a-z0-9-]*$": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/stage"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "$defs": {
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*$"
+    },
+    "type": {
+      "type": "string",
+      "pattern": "^(?:text|lines|bool|int|number|record|list<record>|enum\\{[a-z0-9-]+(?:,[a-z0-9-]+)*\\})$"
+    },
+    "predicate": {
+      "type": "string",
+      "minLength": 1
+    },
+    "role": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "keys": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/name"
+          }
+        },
+        "properties": {
+          "type": "object",
+          "additionalProperties": false,
+          "patternProperties": {
+            "^[a-z][a-z0-9-]*$": {
+              "$ref": "#/$defs/type"
+            }
+          }
+        },
+        "children": {
+          "type": "object",
+          "additionalProperties": false,
+          "patternProperties": {
+            "^[a-z][a-z0-9-]*$": {
+              "enum": [
+                "one",
+                "optional",
+                "many"
+              ]
+            }
+          }
+        },
+        "affordances": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "click",
+              "double-click",
+              "context-click",
+              "drag-source",
+              "drop-target",
+              "wheel",
+              "text-entry",
+              "focusable"
+            ]
+          }
+        },
+        "anchors": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*(?:\\((?:[a-z][a-z0-9-]*(?:, *[a-z][a-z0-9-]*)*)?\\))?$"
+          }
+        },
+        "assertions": {
+          "type": "object",
+          "additionalProperties": false,
+          "patternProperties": {
+            "^[a-z][a-z0-9-]*(?:\\((?:[a-z][a-z0-9-]*(?:, *[a-z][a-z0-9-]*)*)?\\))?$": {
+              "$ref": "#/$defs/predicate"
+            }
+          }
+        },
+        "sync": {
+          "$ref": "#/$defs/syncMap"
+        }
+      }
+    },
+    "syncMap": {
+      "type": "object",
+      "additionalProperties": false,
+      "patternProperties": {
+        "^[a-z][a-z0-9-]*(?:\\.[a-z][a-z0-9-]*)*$": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/predicate"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "stage": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "params": {
+          "type": "object",
+          "additionalProperties": false,
+          "patternProperties": {
+            "^[a-z][a-z0-9-]*$": {
+              "$ref": "#/$defs/type"
+            }
+          }
+        },
+        "summary": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

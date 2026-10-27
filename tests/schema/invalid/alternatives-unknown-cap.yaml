@@ -1,0 +1,7 @@
+scenario: 1
+name: schema/alternatives-unknown-cap
+steps:
+  - key: Enter
+    alternatives:
+      input.telepathy:
+        - key: Esc

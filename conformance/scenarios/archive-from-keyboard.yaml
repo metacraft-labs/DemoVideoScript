@@ -1,0 +1,27 @@
+scenario: 1
+name: notes/archive-from-keyboard
+pack: notes-app
+summary: Archiving the selected note with its shortcut removes it from the list.
+
+stage:
+  - use: seed-notes
+    with: { fixture: fixtures/three-notes.json }
+  - use: launch-app
+
+steps:
+  - expect: { at: note-list, count: 3 }
+  - beat: select
+    narration: { text: "Pick the note you are done with.", to: archive }
+    steps:
+      - click: { at: 'note-list/note[title="Groceries"]', pace: thoughtful }
+      - expect: { at: 'note-list/note[title="Groceries"]', selected: true }
+      - expect: { at: focused, role: note-list }
+  - beat: archive
+    narration: { text: "One shortcut archives it.", to: archive }
+    steps:
+      - chord: { bound: "notes.archive-selected" }
+        dwell: 1.5s
+      - wait: { until: "note-list.loaded" }
+      - expect: { at: note-list, count: 2 }
+      - expect: { at: 'note-list/note[title="Groceries"]', absent: true }
+      - capture: { name: after-archive, of: note-list }

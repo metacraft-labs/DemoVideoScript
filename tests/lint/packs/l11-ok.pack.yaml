@@ -1,0 +1,11 @@
+# expect:
+pack: 1
+name: notes-app
+root: window
+roles:
+  window: {}
+flows:
+  reset:
+    - key: Esc
+stages:
+  seed-notes: ~

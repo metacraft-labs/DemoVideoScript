@@ -1,0 +1,5 @@
+scenario: 1
+name: refused/explicit-key
+steps:
+  - ? key
+    : Enter

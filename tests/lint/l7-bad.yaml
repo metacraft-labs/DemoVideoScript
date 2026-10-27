@@ -1,0 +1,16 @@
+# expect: L7:7 L7:9 L7:10 L7:11 L7:12 L7:13 L7:14 L7:16
+scenario: 1
+name: lint/l7-bad
+pack: notes-app
+stage:
+  - use: launch-app
+  - use: open-database
+steps:
+  - expect: { at: note-list, assert: alphabetical }
+  - expect: { at: note-list, assert: "sorted-by(title, desc)" }
+  - expect: { at: note-list, assert: "sorted-by(colour)" }
+  - wait: { until: "note-list.refreshed" }
+  - wait: { until: "app.ready" }
+  - flow: delete-note
+  - flow: rename-note
+    with: { title: Taxes, to: Bills, colour: red }

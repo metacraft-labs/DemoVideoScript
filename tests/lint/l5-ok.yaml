@@ -1,0 +1,13 @@
+# expect:
+scenario: 1
+name: lint/l5-ok
+pack: notes-app
+stage:
+  - use: launch-app
+steps:
+  - click: 'note-list/note[title="Taxes"]'
+    settle: false
+  - wait: { until: { at: 'note-list/note[title="Taxes"]', selected: true } }
+  - expect: { at: 'note-list/note[title="Taxes"]', selected: true }
+  - key: Down
+  - expect: { at: 'note-list/note[title="Groceries"]', selected: true }

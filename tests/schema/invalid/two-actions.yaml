@@ -1,0 +1,5 @@
+scenario: 1
+name: schema/two-actions
+steps:
+  - key: Enter
+    click: search-field

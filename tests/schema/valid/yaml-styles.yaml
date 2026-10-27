@@ -1,0 +1,32 @@
+---
+# Every YAML style the reader supports.
+scenario: 1.0
+name: schema/yaml-styles
+summary: >-
+  A folded
+  summary, over two lines.
+steps:
+- type: |
+    two lines
+    of text
+- type: "tab\tand é and \"quotes\""
+- type: 'it''s'
+- type: plain text
+    continued on the next line
+- key: Plus
+- key: F12
+- chord: Mod+Shift+Plus Alt+F4
+- key: '#'
+- expect:
+    at: 'note-list/note[title="a, b: c"]'
+    title: "a, b: c"
+    count: { ge: 0x1 }
+    position: ~
+    tags: [a, 'b', "c"]
+    body: { equals: { x: 1 } }
+- wait: { until: { at: focused/ancestor(note-list), present: true }, timeout: 2 }
+- hover: { at: search-field, for: 0.5 }
+- key: Enter
+  dwell: 250ms
+  lead-in: 1m
+...

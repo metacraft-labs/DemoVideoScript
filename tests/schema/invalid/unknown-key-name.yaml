@@ -1,0 +1,4 @@
+scenario: 1
+name: schema/unknown-key-name
+steps:
+  - key: Return

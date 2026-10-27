@@ -1,0 +1,25 @@
+scenario: 1
+name: notes/hover-and-modifiers
+pack: notes-app
+summary: Hovering a toolbar button explains it in the status bar; Shift-click extends the selection.
+
+stage:
+  - use: seed-notes
+    with: { fixture: fixtures/three-notes.json }
+  - use: launch-app
+
+steps:
+  - move: { at: search-field, pace: quick }
+  - hover: { at: 'toolbar/toolbar-button[label="Sort"]', for: 800ms }
+  - expect: { at: status-bar, message: { contains: "Sort" } }
+  - click: 'note-list/note[title="Taxes"]'
+  - press: Shift
+  - click: 'note-list/note[title="Recipes"]'
+  - release: Shift
+  - expect: { at: 'note-list/note[title="Taxes"]', selected: true }
+  - expect: { at: 'note-list/note[title="Recipes"]', selected: true }
+  - click: { at: 'note-list/note[title="Groceries"]', modifiers: [Mod] }
+  - expect: { at: 'note-list/note[title="Groceries"]', selected: true }
+  - press: { at: 'note-list/note[title="Taxes"]', button: left }
+  - release: { at: 'note-list/note[title="Taxes"]', button: left }
+  - expect: { at: 'note-list/note[title="Recipes"]', selected: false }

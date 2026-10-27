@@ -1,0 +1,44 @@
+scenario: 1
+name: notes/presentation-tour
+pack: notes-app
+summary: Every timing and presentation annotation, on an ordinary flow.
+
+stage:
+  - use: seed-notes
+    with: { fixture: fixtures/three-notes.json }
+  - use: launch-app
+
+steps:
+  - expect: { at: window, title: Notes }
+    chapter: Start
+    caption: { text: "Three notes.", to: open }
+  - beat: open
+    narration: { text: "Open a note by clicking it.", voice: narrator }
+    callout: { at: 'note-list/note[title="Recipes"]', anchor: title-end, text: "This one", to: open }
+    steps:
+      - click: { at: 'note-list/note[title="Recipes"]', pace: { preset: careful, overshoot: 0.2, curvature: 0.5, seed: 7 } }
+        id: open-click
+        lead-in: 500ms
+      - wait: { until: settled }
+      - expect: { at: 'note-list/note[title="Recipes"]', selected: true }
+  - beat: write
+    caption: { text: "Typing is paced like a person.", from: write, to: done, style: lower-third }
+    steps:
+      - click: search-field
+      - type: { text: "pan", pace: { key-mean: 180ms, key-sigma: 0.4, key-min: 40ms, key-max: 900ms, commit-pause: 0.3 } }
+        dwell: 1s
+      - wait: { until: idle }
+      - expect: { at: search-field, value: pan }
+        lead-in: 0.2s
+        id: done
+  - drag:
+      from: 'note-list/note[title="Recipes"]'
+      to: 'note-list/note[title="Recipes"]'
+    alternatives:
+      input.pointer.drag:
+        - click: 'note-list/note[title="Recipes"]'
+  - key: Esc
+    settle: false
+  - wait: { until: settled }
+  - capture: { name: final }
+    chapter: End

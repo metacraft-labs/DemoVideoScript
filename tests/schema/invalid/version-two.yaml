@@ -1,0 +1,4 @@
+scenario: 2
+name: schema/version-two
+steps:
+  - key: Enter

@@ -1,0 +1,11 @@
+# expect:
+scenario: 1
+name: lint/l2-ok
+pack: notes-app
+stage:
+  - use: launch-app
+steps:
+  - expect: { at: window, title: Notes }
+  - expect: { at: 'dialog[title="Rename"]/text-field[label="Name"]', absent: true }
+  - click: { at: search-field, anchor: caret-at(3) }
+  - expect: { at: focused/ancestor(note-list), count: 3 }

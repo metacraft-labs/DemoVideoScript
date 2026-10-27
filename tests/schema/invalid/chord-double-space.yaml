@@ -1,0 +1,4 @@
+scenario: 1
+name: schema/chord-double-space
+steps:
+  - chord: Ctrl+K  Ctrl+C

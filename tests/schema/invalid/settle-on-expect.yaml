@@ -1,0 +1,5 @@
+scenario: 1
+name: schema/settle-on-expect
+steps:
+  - expect: { at: note-list, count: 1 }
+    settle: false

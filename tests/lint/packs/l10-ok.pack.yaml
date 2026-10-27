@@ -1,0 +1,14 @@
+# expect:
+pack: 1
+name: notes-app
+root: window
+roles:
+  window:
+    children: { panel: optional }
+  panel:
+    properties: { count: int, focused: bool }
+    assertions:
+      empty: "count == 0"
+flows:
+  confirm:
+    - key: Enter

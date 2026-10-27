@@ -1,0 +1,118 @@
+# The conformance application's pack: its backend-neutral part.
+#
+# The conformance application is a small notes list with a toolbar, a dialog,
+# a text field, a context menu, drag-to-reorder and a scrolling list. It exists
+# to exercise every action, matcher, relation, sync form and timing mode of the
+# format on every backend. Each backend's binding for it lives in that backend's
+# own repository.
+pack: 1
+name: notes-app
+summary: The DemoVideoScript conformance application.
+root: window
+
+roles:
+  window:
+    properties: { title: text }
+    children:
+      toolbar: one
+      search-field: one
+      note-list: one
+      status-bar: one
+      dialog: optional
+      context-menu: optional
+
+  toolbar:
+    children: { toolbar-button: many }
+
+  toolbar-button:
+    keys: [label]
+    properties: { label: text, enabled: bool }
+    affordances: [click]
+
+  search-field:
+    properties: { value: text, focused: bool }
+    affordances: [click, text-entry, focusable]
+    anchors: [caret-at(col)]
+
+  note-list:
+    properties: { count: int, order: lines }
+    children: { note: many }
+    affordances: [drop-target, wheel, focusable]
+    assertions:
+      sorted-by(key): "every adjacent pair (a, b) of note: a[key] <= b[key]"
+      shows-only(tag): "every note: tag in note.tags"
+      none-selected: "none note: note.selected"
+      has-pinned: "some note: note.pinned == true"
+      at-most(n): "count(note) <= n"
+    sync:
+      loaded: ~
+      settled-selection: "count(note) >= 0"
+
+  note:
+    keys: [title]
+    properties:
+      title: text
+      selected: bool
+      pinned: bool
+      body: lines
+      tags: lines
+      position: int
+      state: "enum{active,archived}"
+    affordances: [click, double-click, context-click, drag-source, drop-target]
+    anchors: [title-end, handle]
+
+  dialog:
+    keys: [title]
+    properties: { title: text }
+    children:
+      text-field: many
+      dialog-button: many
+
+  text-field:
+    keys: [label]
+    properties: { label: text, value: text, focused: bool }
+    affordances: [click, text-entry, focusable]
+    anchors: [caret-at(col)]
+
+  dialog-button:
+    keys: [label]
+    properties: { label: text }
+    affordances: [click]
+
+  context-menu:
+    children: { menu-item: many }
+
+  menu-item:
+    keys: [label]
+    properties: { label: text, enabled: bool }
+    affordances: [click]
+
+  status-bar:
+    properties: { message: text }
+
+sync:
+  settled: ~
+  idle: ~
+
+flows:
+  open-rename-dialog(title):
+    - click: { at: 'note-list/note[title="${title}"]', count: 2 }
+    - wait: { until: { at: 'dialog[title="Rename"]', present: true } }
+  rename-note(title, to):
+    - flow: open-rename-dialog
+      with: { title: "${title}" }
+    - chord: Mod+a
+    - type: "${to}"
+    - key: Enter
+    - wait: { until: { at: 'dialog[title="Rename"]', absent: true } }
+
+stages:
+  seed-notes:
+    summary: Write the notes the application starts with.
+    params: { fixture: text }
+  launch-app:
+    summary: Start the application with the seeded notes.
+    params: { width: int, height: int }
+  set-clock:
+    summary: Fix the application's clock.
+    params: { time: text }

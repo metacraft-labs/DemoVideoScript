@@ -1,0 +1,5 @@
+scenario: 1
+name: schema/callout-no-at
+steps:
+  - key: Enter
+    callout: { text: here }

@@ -1,0 +1,4 @@
+scenario: 1
+name: schema/ancestor-first
+steps:
+  - click: 'ancestor(note-list)'

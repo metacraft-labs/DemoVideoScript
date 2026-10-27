@@ -1,0 +1,13 @@
+# expect: L12:10 L12:13
+scenario: 1
+name: lint/l12-bad
+pack: notes-app
+stage:
+  - use: launch-app
+steps:
+  - click: search-field
+    id: here
+  - beat: here
+    steps:
+      - capture: { name: shot }
+  - capture: { name: shot }

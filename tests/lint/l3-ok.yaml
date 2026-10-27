@@ -1,0 +1,12 @@
+# expect:
+scenario: 1
+name: lint/l3-ok
+pack: notes-app
+stage:
+  - use: launch-app
+steps:
+  - click: 'toolbar/toolbar-button[label="Sort"]'
+  - click: { at: 'note-list/note[title="Taxes"]', count: 2 }
+  - click: { at: 'note-list/note[title="Taxes"]', button: right }
+  - drag: { from: 'note-list/note[title="Taxes"]', to: note-list }
+  - wheel: { at: note-list, direction: down }

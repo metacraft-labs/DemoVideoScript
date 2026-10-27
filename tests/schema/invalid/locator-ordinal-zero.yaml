@@ -1,0 +1,4 @@
+scenario: 1
+name: schema/locator-ordinal-zero
+steps:
+  - click: 'note-list/note[#0]'

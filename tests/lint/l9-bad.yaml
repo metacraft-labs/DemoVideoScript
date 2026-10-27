@@ -1,0 +1,11 @@
+# expect: L9:9 L9:10 L9:11
+scenario: 1
+name: lint/l9-bad
+pack: notes-app
+stage:
+  - use: launch-app
+steps:
+  - click: 'note-list/note[title="Taxes"]'
+    narration: { text: "Pick one.", to: archive }
+    caption: { text: "Click", from: start }
+    callout: { at: note-list, text: "here", to: nowhere }

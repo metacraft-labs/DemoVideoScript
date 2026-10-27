@@ -1,0 +1,4 @@
+scenario: 1
+name: schema/chord-bound-bad
+steps:
+  - chord: { bound: Archive Selected }

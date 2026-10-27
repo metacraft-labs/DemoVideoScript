@@ -1,0 +1,35 @@
+scenario: 1
+name: notes/search-and-matchers
+pack: notes-app
+summary: Typing in the search field filters the list; every matcher is exercised.
+
+stage:
+  - use: seed-notes
+    with: { fixture: fixtures/three-notes.json }
+  - use: launch-app
+  - use: set-clock
+    with: { time: "2026-01-01T09:00:00Z" }
+
+steps:
+  - click: { at: search-field, anchor: caret-at(0) }
+  - expect: { at: focused, role: search-field }
+  - type: "home"
+  - wait: { until: "note-list.loaded" }
+  - expect: { at: note-list, assert: "shows-only(home)", count: { le: 2 } }
+  - expect: { at: note-list, count: { ge: 1 } }
+  - expect: { at: note-list, count: { lt: 3 } }
+  - expect: { at: note-list, count: { gt: 1 } }
+  - expect: { at: note-list, order: { unordered: [Groceries, Taxes] } }
+  - expect: { at: note-list, order: { subsequence: [Taxes] } }
+  - expect: { at: note-list, order: { count: 2 } }
+  - expect:
+      at: 'note-list/note[title="Groceries"]'
+      body: { subsequence: [milk, bread] }
+      tags: { contains: home }
+      title: { matches: "^Gro" }
+      state: { one-of: [active, archived] }
+      selected: { equals: false }
+  - expect: { at: search-field, value: home, focused: true }
+  - key: Esc
+  - expect: { at: search-field, value: "" }
+  - expect: { at: note-list, count: 3 }

@@ -1,0 +1,12 @@
+# expect: L11:9 L11:10
+pack: 1
+name: notes-app
+root: window
+roles:
+  window: {}
+flows:
+  reset:
+    - use: seed-notes
+    - eval: "reset()"
+stages:
+  seed-notes: ~

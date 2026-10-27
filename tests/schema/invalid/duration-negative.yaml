@@ -1,0 +1,5 @@
+scenario: 1
+name: schema/duration-negative
+steps:
+  - key: Enter
+    dwell: -1

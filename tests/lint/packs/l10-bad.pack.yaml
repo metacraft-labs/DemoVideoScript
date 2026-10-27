@@ -1,0 +1,16 @@
+# expect: L10:8 L10:9 L10:11 L10:15
+pack: 1
+name: notes-app
+root: window
+roles:
+  window:
+    children: { focused: optional, panel: optional, box: optional }
+  focused: {}
+  panel:
+    properties: { at: text }
+  box:
+    assertions:
+      not(x): "true"
+flows:
+  expect:
+    - key: Enter

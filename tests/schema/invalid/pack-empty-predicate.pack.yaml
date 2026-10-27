@@ -1,0 +1,7 @@
+pack: 1
+name: p
+root: window
+roles:
+  window:
+    assertions:
+      ok: ""

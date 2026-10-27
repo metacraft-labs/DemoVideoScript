@@ -1,0 +1,12 @@
+# expect: L6:10 L6:11
+scenario: 1
+name: lint/l6-bad
+pack: notes-app
+stage:
+  - use: launch-app
+steps:
+  - click: 'note-list/note[title="Taxes"]'
+    dwell: 2s
+  - expect: { at: 'note-list/note[title="Taxes"]', selected: true }
+  - expect: { at: note-list, count: 3 }
+    lead-in: 1s

@@ -1,0 +1,10 @@
+# expect:
+scenario: 1
+name: lint/l8-ok
+pack: notes-app
+requires: [termassert]
+stage:
+  - use: launch-app
+steps:
+  - ext: termassert.golden
+    with: { file: goldens/list.txt }

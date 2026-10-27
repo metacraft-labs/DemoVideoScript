@@ -1,0 +1,19 @@
+scenario: 1
+name: notes/context-menu-pin
+pack: notes-app
+summary: A right click opens the note's context menu; Pin pins the note.
+
+stage:
+  - use: seed-notes
+    with: { fixture: fixtures/three-notes.json }
+  - use: launch-app
+
+steps:
+  - expect: { at: 'note-list/note[title="Recipes"]', pinned: false }
+  - click: { at: 'note-list/note[title="Recipes"]', button: right }
+  - wait: { until: { at: context-menu, present: true } }
+  - expect: { at: 'context-menu/menu-item[label="Pin"]', enabled: true }
+  - click: 'context-menu/menu-item[label="Pin"]'
+  - expect: { at: context-menu, absent: true }
+  - expect: { at: 'note-list/note[title="Recipes"]', pinned: true }
+  - expect: { at: note-list, assert: has-pinned }

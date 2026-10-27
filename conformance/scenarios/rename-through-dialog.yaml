@@ -1,0 +1,30 @@
+scenario: 1
+name: notes/rename-through-dialog
+pack: notes-app
+summary: Double-clicking a note opens the rename dialog; typing a name and Enter renames it.
+
+stage:
+  - use: seed-notes
+    with: { fixture: fixtures/three-notes.json }
+  - use: launch-app
+    with: { width: 100, height: 30 }
+
+steps:
+  - flow: open-rename-dialog
+    with: { title: Groceries }
+  - expect:
+      at: dialog[title="Rename"]/text-field[label="Name"]
+      value: Groceries
+      focused: true
+  - chord: Mod+a
+  - type: { text: "Shopping", pace: quick }
+  - expect: { at: 'dialog[title="Rename"]/text-field[label="Name"]', value: Shopping }
+  - key: Enter
+  - wait:
+      until: { at: 'dialog[title="Rename"]', absent: true }
+      timeout: 5s
+  - expect: { at: 'note-list/note[title="Shopping"]', present: true }
+  - expect: { at: 'note-list/note[title="Groceries"]', absent: true }
+  - flow: rename-note
+    with: { title: Shopping, to: Groceries }
+  - expect: { at: 'note-list/note[title="Groceries"]', present: true }

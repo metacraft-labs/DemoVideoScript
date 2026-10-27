@@ -1,0 +1,4 @@
+scenario: 1
+name: Schema Bad Name
+steps:
+  - key: Enter

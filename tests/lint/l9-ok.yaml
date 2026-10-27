@@ -1,0 +1,15 @@
+# expect:
+scenario: 1
+name: lint/l9-ok
+pack: notes-app
+stage:
+  - use: launch-app
+steps:
+  - click: 'note-list/note[title="Taxes"]'
+    id: start
+    narration: { text: "Pick one.", to: archive }
+    caption: { text: "Click", from: start }
+  - beat: archive
+    callout: { at: note-list, text: "here", to: archive }
+    steps:
+      - chord: { bound: notes.archive-selected }

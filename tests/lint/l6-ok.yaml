@@ -1,0 +1,12 @@
+# expect:
+scenario: 1
+name: lint/l6-ok
+pack: notes-app
+stage:
+  - use: launch-app
+steps:
+  - click: 'note-list/note[title="Taxes"]'
+    dwell: 2s
+  - wait: { until: settled }
+  - expect: { at: 'note-list/note[title="Taxes"]', selected: true }
+    lead-in: 1s

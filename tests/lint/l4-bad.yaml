@@ -1,0 +1,9 @@
+# expect: L4:8 L4:9
+scenario: 1
+name: lint/l4-bad
+pack: notes-app
+stage:
+  - use: launch-app
+steps:
+  - click: note-list/note[#1]
+  - expect: { at: 'note-list/note[#3]', selected: false }

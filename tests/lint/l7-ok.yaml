@@ -1,0 +1,12 @@
+# expect:
+scenario: 1
+name: lint/l7-ok
+pack: notes-app
+stage:
+  - use: launch-app
+steps:
+  - expect: { at: note-list, assert: "sorted-by(position)" }
+  - wait: { until: "note-list.loaded" }
+  - wait: { until: idle }
+  - flow: rename-note
+    with: { title: Taxes, to: Bills }

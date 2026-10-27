@@ -1,0 +1,14 @@
+# expect: L2:8 L2:9 L2:10 L2:11 L2:12 L2:13 L2:14
+scenario: 1
+name: lint/l2-bad
+pack: notes-app
+stage:
+  - use: launch-app
+steps:
+  - expect: { at: sidebar, present: true }
+  - expect: { at: 'note-list/dialog[title="Rename"]', present: true }
+  - expect: { at: 'note-list/note[body="x"]', present: true }
+  - expect: { at: 'note-list/note[title="Taxes"]', colour: red }
+  - click: { at: search-field, anchor: middle }
+  - expect: { at: focused/ancestor(toolbar-button)/note, present: true }
+  - expect: { at: note, present: true }

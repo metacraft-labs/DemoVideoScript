@@ -1,0 +1,2 @@
+{"scenario": 1, "name": "schema/json-input", "steps": [{"key": "Enter"}, {"chord": "Ctrl+K Ctrl+C"},
+ {"click": {"at": "note-list/note[title=\"a \\\"b\\\"\"]", "count": 2.0}}, {"key": "é"}]}

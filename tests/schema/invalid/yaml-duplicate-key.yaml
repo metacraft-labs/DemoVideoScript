@@ -1,0 +1,4 @@
+scenario: 1
+name: yaml/dup
+name: again
+steps: []

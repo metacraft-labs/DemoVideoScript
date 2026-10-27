@@ -1,0 +1,4 @@
+scenario: 1
+name: schema/no-action
+steps:
+  - dwell: 1s

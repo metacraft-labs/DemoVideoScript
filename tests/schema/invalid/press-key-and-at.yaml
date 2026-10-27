@@ -1,0 +1,4 @@
+scenario: 1
+name: schema/press-key-and-at
+steps:
+  - press: { key: Shift, at: search-field }

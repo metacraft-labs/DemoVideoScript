@@ -1,0 +1,4 @@
+scenario: 1
+name: schema/modifiers-dup
+steps:
+  - click: { at: search-field, modifiers: [Ctrl, Ctrl] }

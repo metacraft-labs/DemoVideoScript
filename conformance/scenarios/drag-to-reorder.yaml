@@ -1,0 +1,23 @@
+scenario: 1
+name: notes/drag-to-reorder
+pack: notes-app
+summary: Dragging a note by its handle onto another note moves it to that position.
+
+stage:
+  - use: seed-notes
+    with: { fixture: fixtures/three-notes.json }
+  - use: launch-app
+
+steps:
+  - expect: { at: note-list, order: [Taxes, Groceries, Recipes] }
+  - drag:
+      from: { at: 'note-list/note[title="Recipes"]', anchor: handle }
+      to: 'note-list/note[title="Taxes"]'
+      via: [ 'note-list/note[title="Groceries"]' ]
+      pace: careful
+  - wait: { until: "note-list.loaded" }
+  - expect: { at: note-list, order: [Recipes, Taxes, Groceries] }
+  - expect:
+      at: 'note-list/note[title="Recipes"]'
+      position: 1
+      geometry: { above: 'note-list/note[title="Taxes"]' }

@@ -1,0 +1,4 @@
+scenario: 1
+name: schema/wheel-amount-zero
+steps:
+  - wheel: { at: note-list, direction: up, amount: 0 }

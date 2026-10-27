@@ -1,0 +1,4 @@
+scenario: 1
+name: schema/locator-css
+steps:
+  - click: '#notes > li:first-child'

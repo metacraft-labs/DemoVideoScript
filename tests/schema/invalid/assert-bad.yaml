@@ -1,0 +1,4 @@
+scenario: 1
+name: schema/assert-bad
+steps:
+  - expect: { at: note-list, assert: 'sorted by title' }
