@@ -1,7 +1,7 @@
 scenario: 1
 name: notes/scroll-the-list
 pack: notes-app
-summary: The wheel scrolls a long list; a note below the fold becomes visible.
+summary: The wheel scrolls a long list; the notes below the fold come into view.
 
 stage:
   - use: seed-notes
@@ -10,16 +10,15 @@ stage:
     with: { width: 80, height: 24 }
 
 steps:
-  - expect: { at: note-list, count: 30 }
+  - expect: { at: note-list, count: 30, first-visible: Note 01 }
   - expect:
-      at: 'note-list/note[title="Note 30"]'
-      geometry: { visible: false }
+      at: 'note-list/note[title="Note 01"]'
+      geometry: { visible: true, inside: note-list }
   - wheel: { at: note-list, direction: down, amount: 10 }
   - wait: { until: settled }
+  - expect: { at: note-list, first-visible: Note 11 }
   - expect:
       at: 'note-list/note[title="Note 30"]'
       geometry: { visible: true, inside: note-list }
   - wheel: { at: note-list, direction: up, amount: 10 }
-  - expect:
-      at: 'note-list/note[title="Note 01"]'
-      geometry: { visible: true }
+  - expect: { at: note-list, first-visible: Note 01 }

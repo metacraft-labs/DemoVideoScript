@@ -35,7 +35,7 @@ roles:
     anchors: [caret-at(col)]
 
   note-list:
-    properties: { count: int, order: lines }
+    properties: { count: int, order: lines, first-visible: text }
     children: { note: many }
     affordances: [drop-target, wheel, focusable]
     assertions:

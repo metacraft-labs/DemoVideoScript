@@ -534,7 +534,8 @@ proc surface*(app: App): Element =
   var order: seq[string]
   for idx in app.view: order.add app.notes[idx].title
   var list = el("note-list", Rect(row: app.listTop, col: 0, w: w, h: app.listRows),
-    %*{"count": app.view.len, "order": order})
+    %*{"count": app.view.len, "order": order,
+       "first-visible": (if app.scroll < app.view.len: app.notes[app.view[app.scroll]].title else: "")})
   for pos, idx in app.view:
     let n = app.notes[idx]
     let k = pos - app.scroll
@@ -586,6 +587,9 @@ proc render*(app: App): seq[seq[Cell]] =
     result[r] = newSeq[Cell](app.width)
     for c in 0 ..< app.width: result[r][c] = Cell(text: " ")
   result.put(0, 0, " Notes ", bold = true)
+  # the list's size, right-aligned: what a reader of the screen counts by
+  let size = $app.view.len & " notes "
+  result.put(0, app.width - size.len, size)
   for i, b in ToolbarButtons:
     result.put(1, buttonCol(i), "[" & b & "]", reverse = app.hoverLabel == b)
   result.put(2, 0, "Search: ")
