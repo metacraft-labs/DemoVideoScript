@@ -1,0 +1,12 @@
+scenario: 1
+name: runner/wait-timeout
+pack: notes-app
+stage:
+  - use: seed-notes
+    with: { fixture: ../../conformance/fixtures/three-notes.json }
+  - use: launch-app
+steps:
+  - wait:
+      until: { at: note-list, count: 7 }
+      timeout: 300ms
+  - expect: { at: note-list, count: 3 }

@@ -5,7 +5,7 @@ summary: Double-clicking a note opens the rename dialog; typing a name and Enter
 
 stage:
   - use: seed-notes
-    with: { fixture: fixtures/three-notes.json }
+    with: { fixture: ../fixtures/three-notes.json }
   - use: launch-app
     with: { width: 100, height: 30 }
 

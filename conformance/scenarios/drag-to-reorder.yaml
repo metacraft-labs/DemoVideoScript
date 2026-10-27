@@ -5,7 +5,7 @@ summary: Dragging a note by its handle onto another note moves it to that positi
 
 stage:
   - use: seed-notes
-    with: { fixture: fixtures/three-notes.json }
+    with: { fixture: ../fixtures/three-notes.json }
   - use: launch-app
 
 steps:

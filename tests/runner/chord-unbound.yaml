@@ -1,0 +1,7 @@
+scenario: 1
+name: runner/chord-unbound
+pack: notes-app
+stage:
+  - use: launch-app
+steps:
+  - chord: { bound: notes.export-everything }

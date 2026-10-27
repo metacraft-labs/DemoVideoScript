@@ -1,0 +1,65 @@
+# dvs2 mutation results — 2026-10-27 17:40:28 +0200
+# kill command: just test
+
+KILLED   R1      598.8s  the capability check moved after the stage
+           | DVS_BIN_DIR=/tmp/nix-shell.qdqfcm/dvs2-mut-pzodfnho/bin nim c -r --hints:off --styleCheck:usages --styleCheck:error --path:src --nimcache:/tmp/nix-shell.qdqfcm/
+           | Error: execution of an external program failed: '/tmp/nix-shell.qdqfcm/dvs2-mut-pzodfnho/test-bin/test_runner'
+           | error: Recipe `test-runner` failed on line 44 with exit code 1
+KILLED   R2      198.8s  the stage channel left open
+           | DVS_BIN_DIR=/tmp/nix-shell.qdqfcm/dvs2-mut-pzodfnho/bin nim c -r --hints:off --styleCheck:usages --styleCheck:error --path:src --nimcache:/tmp/nix-shell.qdqfcm/
+           | Error: execution of an external program failed: '/tmp/nix-shell.qdqfcm/dvs2-mut-pzodfnho/test-bin/test_runner'
+           | error: Recipe `test-runner` failed on line 44 with exit code 1
+KILLED   R3      373.3s  the implicit settled removed
+           | DVS_BIN_DIR=/tmp/nix-shell.qdqfcm/dvs2-mut-pzodfnho/bin nim c -r --hints:off --styleCheck:usages --styleCheck:error --path:src --nimcache:/tmp/nix-shell.qdqfcm/
+           | Error: execution of an external program failed: '/tmp/nix-shell.qdqfcm/dvs2-mut-pzodfnho/test-bin/test_runner'
+           | error: Recipe `test-runner` failed on line 44 with exit code 1
+KILLED   R4      207.3s  a matcher's verdict inverted
+           | DVS_BIN_DIR=/tmp/nix-shell.qdqfcm/dvs2-mut-pzodfnho/bin nim c -r --hints:off --styleCheck:usages --styleCheck:error --path:src --nimcache:/tmp/nix-shell.qdqfcm/
+           | Error: execution of an external program failed: '/tmp/nix-shell.qdqfcm/dvs2-mut-pzodfnho/test-bin/test_runner'
+           | error: Recipe `test-runner` failed on line 44 with exit code 1
+KILLED   R5      170.0s  a geometry relation's comparison swapped
+           | DVS_BIN_DIR=/tmp/nix-shell.qdqfcm/dvs2-mut-pzodfnho/bin nim c -r --hints:off --styleCheck:usages --styleCheck:error --path:src --nimcache:/tmp/nix-shell.qdqfcm/
+           | Error: execution of an external program failed: '/tmp/nix-shell.qdqfcm/dvs2-mut-pzodfnho/test-bin/test_runner'
+           | error: Recipe `test-runner` failed on line 44 with exit code 1
+KILLED   R6      171.9s  unsupported reported as passed
+           | DVS_BIN_DIR=/tmp/nix-shell.qdqfcm/dvs2-mut-pzodfnho/bin nim c -r --hints:off --styleCheck:usages --styleCheck:error --path:src --nimcache:/tmp/nix-shell.qdqfcm/
+           | Error: execution of an external program failed: '/tmp/nix-shell.qdqfcm/dvs2-mut-pzodfnho/test-bin/test_runner'
+           | error: Recipe `test-runner` failed on line 44 with exit code 1
+KILLED   R7      137.7s  a wait that passes on timeout
+           | DVS_BIN_DIR=/tmp/nix-shell.qdqfcm/dvs2-mut-pzodfnho/bin nim c -r --hints:off --styleCheck:usages --styleCheck:error --path:src --nimcache:/tmp/nix-shell.qdqfcm/
+           | Error: execution of an external program failed: '/tmp/nix-shell.qdqfcm/dvs2-mut-pzodfnho/test-bin/test_runner'
+           | error: Recipe `test-runner` failed on line 44 with exit code 1
+KILLED   R8      135.2s  dwell enacted in fast mode
+           | DVS_BIN_DIR=/tmp/nix-shell.qdqfcm/dvs2-mut-pzodfnho/bin nim c -r --hints:off --styleCheck:usages --styleCheck:error --path:src --nimcache:/tmp/nix-shell.qdqfcm/
+           | Error: execution of an external program failed: '/tmp/nix-shell.qdqfcm/dvs2-mut-pzodfnho/test-bin/test_runner'
+           | error: Recipe `test-runner` failed on line 44 with exit code 1
+KILLED   R9      151.4s  the pacing seed ignored
+           | DVS_BIN_DIR=/tmp/nix-shell.qdqfcm/dvs2-mut-pzodfnho/bin nim c -r --hints:off --styleCheck:usages --styleCheck:error --path:src --nimcache:/tmp/nix-shell.qdqfcm/
+           | Error: execution of an external program failed: '/tmp/nix-shell.qdqfcm/dvs2-mut-pzodfnho/test-bin/test_runner'
+           | error: Recipe `test-runner` failed on line 44 with exit code 1
+KILLED   R10     123.5s  a named assertion's quantifier always true
+           | DVS_BIN_DIR=/tmp/nix-shell.qdqfcm/dvs2-mut-pzodfnho/bin nim c -r --hints:off --styleCheck:usages --styleCheck:error --path:src --nimcache:/tmp/nix-shell.qdqfcm/
+           | Error: execution of an external program failed: '/tmp/nix-shell.qdqfcm/dvs2-mut-pzodfnho/test-bin/test_runner'
+           | error: Recipe `test-runner` failed on line 44 with exit code 1
+KILLED   R11     178.4s  absent no longer observed
+           | DVS_BIN_DIR=/tmp/nix-shell.qdqfcm/dvs2-mut-pzodfnho/bin nim c -r --hints:off --styleCheck:usages --styleCheck:error --path:src --nimcache:/tmp/nix-shell.qdqfcm/
+           | Error: execution of an external program failed: '/tmp/nix-shell.qdqfcm/dvs2-mut-pzodfnho/test-bin/test_runner'
+           | error: Recipe `test-runner` failed on line 44 with exit code 1
+KILLED   R12     216.5s  the side-effect probe of reads disabled
+           | DVS_BIN_DIR=/tmp/nix-shell.qdqfcm/dvs2-mut-pzodfnho/bin nim c -r --hints:off --styleCheck:usages --styleCheck:error --path:src --nimcache:/tmp/nix-shell.qdqfcm/
+           | Error: execution of an external program failed: '/tmp/nix-shell.qdqfcm/dvs2-mut-pzodfnho/test-bin/test_runner'
+           | error: Recipe `test-runner` failed on line 44 with exit code 1
+KILLED   J1      185.5s  a response to another request accepted
+           | DVS_BIN_DIR=/tmp/nix-shell.qdqfcm/dvs2-mut-pzodfnho/bin nim c -r --hints:off --styleCheck:usages --styleCheck:error --path:src --nimcache:/tmp/nix-shell.qdqfcm/
+           | Error: execution of an external program failed: '/tmp/nix-shell.qdqfcm/dvs2-mut-pzodfnho/test-bin/test_runner'
+           | error: Recipe `test-runner` failed on line 44 with exit code 1
+KILLED   J2      180.9s  a backend's exit read as an empty answer
+           | DVS_BIN_DIR=/tmp/nix-shell.qdqfcm/dvs2-mut-pzodfnho/bin nim c -r --hints:off --styleCheck:usages --styleCheck:error --path:src --nimcache:/tmp/nix-shell.qdqfcm/
+           | Error: execution of an external program failed: '/tmp/nix-shell.qdqfcm/dvs2-mut-pzodfnho/test-bin/test_runner'
+           | error: Recipe `test-runner` failed on line 44 with exit code 1
+KILLED   A1      246.7s  the backend accepts stage calls after end-stage
+           | DVS_BIN_DIR=/tmp/nix-shell.qdqfcm/dvs2-mut-pzodfnho/bin nim c -r --hints:off --styleCheck:usages --styleCheck:error --path:src --nimcache:/tmp/nix-shell.qdqfcm/
+           | Error: execution of an external program failed: '/tmp/nix-shell.qdqfcm/dvs2-mut-pzodfnho/test-bin/test_runner'
+           | error: Recipe `test-runner` failed on line 44 with exit code 1
+
+15/15 killed, 0 survived

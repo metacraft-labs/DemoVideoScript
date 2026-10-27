@@ -1,0 +1,12 @@
+scenario: 1
+name: runner/unsupported-ext
+pack: notes-app
+requires: [termassert]
+stage:
+  - use: mark-started
+    with: { path: stage-ran.txt }
+  - use: launch-app
+steps:
+  - expect: { at: note-list, count: 0 }
+  - ext: termassert.golden
+    with: { file: list.txt }

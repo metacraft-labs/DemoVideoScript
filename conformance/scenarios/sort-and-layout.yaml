@@ -5,7 +5,7 @@ summary: Sorting orders the notes by title; the toolbar sits above the list, ins
 
 stage:
   - use: seed-notes
-    with: { fixture: fixtures/three-notes.json }
+    with: { fixture: ../fixtures/three-notes.json }
   - use: launch-app
 
 steps:

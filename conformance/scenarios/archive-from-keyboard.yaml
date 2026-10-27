@@ -5,7 +5,7 @@ summary: Archiving the selected note with its shortcut removes it from the list.
 
 stage:
   - use: seed-notes
-    with: { fixture: fixtures/three-notes.json }
+    with: { fixture: ../fixtures/three-notes.json }
   - use: launch-app
 
 steps:

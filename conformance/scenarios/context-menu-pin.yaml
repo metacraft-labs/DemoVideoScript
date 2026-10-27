@@ -5,7 +5,7 @@ summary: A right click opens the note's context menu; Pin pins the note.
 
 stage:
   - use: seed-notes
-    with: { fixture: fixtures/three-notes.json }
+    with: { fixture: ../fixtures/three-notes.json }
   - use: launch-app
 
 steps:

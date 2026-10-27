@@ -276,6 +276,106 @@ def pack_schema():
     }
 
 
+def protocol_schema():
+    """Requests (runner -> backend) and responses (backend -> runner), one JSON
+    object per line. Arms generate their types from this file."""
+    d = {}
+    d["segment"] = {"oneOf": [
+        {"type": "object", "required": ["role"], "additionalProperties": False,
+         "properties": {"role": {"type": "string", "pattern": f"^{NAME}$"},
+                        "keys": {"type": "object", "additionalProperties": {"type": "string"}},
+                        "ordinal": {"type": "integer", "minimum": 1}}},
+        {"type": "object", "required": ["focused"], "additionalProperties": False,
+         "properties": {"focused": {"const": True}}},
+        {"type": "object", "required": ["ancestor"], "additionalProperties": False,
+         "properties": {"ancestor": {"type": "string", "pattern": f"^{NAME}$"}}},
+    ]}
+    d["locator"] = {"type": "object", "required": ["segments"], "additionalProperties": False,
+                    "properties": {"text": {"type": "string"},
+                                   "parent": {"type": "string",
+                                              "$comment": "resolve the segments among this instance's children"},
+                                   "segments": {"type": "array", "items": {"$ref": "#/$defs/segment"}}}}
+    d["geometry"] = {"type": "object", "required": ["x", "y", "w", "h"],
+                     "properties": {"x": {"type": "number"}, "y": {"type": "number"},
+                                    "w": {"type": "number"}, "h": {"type": "number"},
+                                    "visible": {"type": "boolean"}}}
+    req = lambda call, props, required=(): {
+        "type": "object", "required": ["id", "call", *required], "additionalProperties": False,
+        "properties": {"id": {"type": "integer"}, "call": {"const": call}, **props}}
+    requests = [
+        req("hello", {"protocol": {"const": 1}}, ["protocol"]),
+        req("stage", {"use": {"type": "string", "pattern": f"^{NAME}$"},
+                      "with": {"type": "object", "properties": {"$base": {"type": "string"}}}},
+            ["use", "with"]),
+        req("end-stage", {}),
+        req("resolve-chord", {"operation": {"type": "string", "pattern": SYNC}}, ["operation"]),
+        req("locate", {"locator": {"$ref": "#/$defs/locator"}}, ["locator"]),
+        req("read", {"instance": {"type": "string"},
+                     "properties": {"type": "array", "items": {"type": "string"}}},
+            ["instance", "properties"]),
+        req("send", {"action": {"type": "object",
+                                "$comment": "a normalised input step (scenario.schema.json) with 'targets' "
+                                            "(instance ids for target/from/to/via) and, in realistic runs, "
+                                            "'timing' (keyDelaysMs; path and approach as [x, y, ms] points "
+                                            "in the backend's units); or {ext, with}"}},
+            ["action"]),
+        req("await", {"condition": {"type": "string", "pattern": SYNC},
+                      "instance": {"type": "string"},
+                      "timeoutMs": {"type": "integer", "minimum": 0}},
+            ["condition", "timeoutMs"]),
+        req("record", {"op": {"enum": ["start", "mark", "still", "stop"]},
+                       "dir": {"type": "string"}, "path": {"type": "string"},
+                       "name": {"type": "string"}, "instance": {"type": "string"},
+                       "step": {"type": "integer"}, "kind": {"type": "string"}},
+            ["op"]),
+        req("hit", {"x": {"type": "number"}, "y": {"type": "number"}}, ["x", "y"]),
+        req("shutdown", {}),
+    ]
+    ok = lambda props, required=(): {
+        "type": "object", "required": ["id", "ok", *required], "additionalProperties": False,
+        "properties": {"id": {"type": "integer"}, "ok": {"const": True}, **props}}
+    responses = {
+        "error": {"type": "object", "required": ["id", "ok", "error"], "additionalProperties": False,
+                  "properties": {"id": {"type": ["integer", "null"]}, "ok": {"const": False},
+                                 "error": {"type": "object", "required": ["kind", "message"],
+                                           "additionalProperties": False,
+                                           "properties": {"kind": {"enum": [
+                                               "unsupported", "refused", "not-found", "stage-closed",
+                                               "stage", "protocol", "crashed", "internal"]},
+                                               "message": {"type": "string"}}}}},
+        "hello": ok({"backend": {"type": "string"}, "version": {"type": "string"},
+                     "platform": {"enum": ["linux", "macos", "windows"]},
+                     "capabilities": {"type": "array", "items": {"enum": CAPABILITIES}},
+                     "bindings": {"type": ["object", "null"]},
+                     "units": {"enum": ["cell", "px"]}},
+                    ["backend", "capabilities", "units"]),
+        "locate": ok({"outcome": {"enum": ["one", "none", "ambiguous"]},
+                      "instance": {"type": "string"}, "role": {"type": "string"},
+                      "candidates": {"type": "array", "items": {"type": "string"}}},
+                     ["outcome"]),
+        "read": ok({"values": {"type": "object",
+                               "properties": {"geometry": {"$ref": "#/$defs/geometry"}}}},
+                   ["values"]),
+        "await": ok({"met": {"type": "boolean"}}, ["met"]),
+        "resolve-chord": ok({"chord": {"type": ["string", "null"]}}, ["chord"]),
+        "hit": ok({"locator": {"type": ["string", "null"]}}, ["locator"]),
+        "record": ok({"files": {"type": "array", "items": {"type": "string"}}}, ["files"]),
+        "empty": ok({}),
+    }
+    rdefs = {f"response-{k}": v for k, v in responses.items()}
+    return {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "$id": BASE + "backend-protocol.schema.json",
+        "title": "DemoVideoScript backend protocol, version 1 (JSON lines)",
+        "$comment": "A response answers the request with the same id: response-<call> "
+                    "(response-empty for stage, end-stage, send, shutdown) or response-error.",
+        "$defs": {**d, **rdefs,
+                  "request": {"oneOf": requests},
+                  "response": {"anyOf": [{"$ref": f"#/$defs/{k}"} for k in rdefs]}},
+        "oneOf": [{"$ref": "#/$defs/request"}, {"$ref": "#/$defs/response"}],
+    }
+
+
 def render(schema):
     return json.dumps(schema, indent=2, ensure_ascii=False) + "\n"
 
@@ -283,7 +383,8 @@ def render(schema):
 def main():
     out = Path(__file__).resolve().parent.parent / "schemas" / "v1"
     files = {"scenario.schema.json": render(scenario_schema()),
-             "pack.schema.json": render(pack_schema())}
+             "pack.schema.json": render(pack_schema()),
+             "backend-protocol.schema.json": render(protocol_schema())}
     check = "--check" in sys.argv
     stale = []
     for name, text in files.items():

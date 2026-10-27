@@ -5,7 +5,7 @@ summary: Typing in the search field filters the list; every matcher is exercised
 
 stage:
   - use: seed-notes
-    with: { fixture: fixtures/three-notes.json }
+    with: { fixture: ../fixtures/three-notes.json }
   - use: launch-app
   - use: set-clock
     with: { time: "2026-01-01T09:00:00Z" }
@@ -32,4 +32,5 @@ steps:
   - expect: { at: search-field, value: home, focused: true }
   - key: Esc
   - expect: { at: search-field, value: "" }
+  - wait: note-list.loaded
   - expect: { at: note-list, count: 3 }

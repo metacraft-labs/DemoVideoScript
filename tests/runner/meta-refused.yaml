@@ -1,0 +1,7 @@
+scenario: 1
+name: runner/meta-refused
+pack: notes-app
+stage:
+  - use: launch-app
+steps:
+  - chord: Meta+k

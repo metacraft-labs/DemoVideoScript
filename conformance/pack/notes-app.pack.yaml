@@ -116,3 +116,6 @@ stages:
   set-clock:
     summary: Fix the application's clock.
     params: { time: text }
+  mark-started:
+    summary: Write a file recording that the stage ran.
+    params: { path: text }

@@ -435,6 +435,14 @@ proc lintPack*(pack: Pack): Diagnostics =
           message: "flow '" & f.sig.name & "': " & d.message)
   l.diags
 
+# --- static resolution, for the runner ------------------------------------------------
+
+proc staticRole*(pack: Pack; loc: Locator): string =
+  ## The role a locator names, or "" when it depends on focus or does not resolve.
+  if pack == nil: return ""
+  var l = Linter(pack: pack)
+  l.resolveLocator(loc, $loc, 0, 0)
+
 # --- entry point -------------------------------------------------------------------
 
 proc lintScenario*(sc: Scenario; pack: Pack): Diagnostics =

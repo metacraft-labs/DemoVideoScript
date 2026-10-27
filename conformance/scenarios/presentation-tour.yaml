@@ -5,7 +5,7 @@ summary: Every timing and presentation annotation, on an ordinary flow.
 
 stage:
   - use: seed-notes
-    with: { fixture: fixtures/three-notes.json }
+    with: { fixture: ../fixtures/three-notes.json }
   - use: launch-app
 
 steps:
@@ -25,10 +25,10 @@ steps:
     caption: { text: "Typing is paced like a person.", from: write, to: done, style: lower-third }
     steps:
       - click: search-field
-      - type: { text: "pan", pace: { key-mean: 180ms, key-sigma: 0.4, key-min: 40ms, key-max: 900ms, commit-pause: 0.3 } }
+      - type: { text: "rec", pace: { key-mean: 180ms, key-sigma: 0.4, key-min: 40ms, key-max: 900ms, commit-pause: 0.3 } }
         dwell: 1s
       - wait: { until: idle }
-      - expect: { at: search-field, value: pan }
+      - expect: { at: search-field, value: rec }
         lead-in: 0.2s
         id: done
   - drag:

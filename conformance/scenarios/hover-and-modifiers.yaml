@@ -5,7 +5,7 @@ summary: Hovering a toolbar button explains it in the status bar; Shift-click ex
 
 stage:
   - use: seed-notes
-    with: { fixture: fixtures/three-notes.json }
+    with: { fixture: ../fixtures/three-notes.json }
   - use: launch-app
 
 steps:
@@ -18,8 +18,9 @@ steps:
   - release: Shift
   - expect: { at: 'note-list/note[title="Taxes"]', selected: true }
   - expect: { at: 'note-list/note[title="Recipes"]', selected: true }
-  - click: { at: 'note-list/note[title="Groceries"]', modifiers: [Mod] }
   - expect: { at: 'note-list/note[title="Groceries"]', selected: true }
+  - click: { at: 'note-list/note[title="Groceries"]', modifiers: [Mod] }
+  - expect: { at: 'note-list/note[title="Groceries"]', selected: false }
   - press: { at: 'note-list/note[title="Taxes"]', button: left }
   - release: { at: 'note-list/note[title="Taxes"]', button: left }
   - expect: { at: 'note-list/note[title="Recipes"]', selected: false }

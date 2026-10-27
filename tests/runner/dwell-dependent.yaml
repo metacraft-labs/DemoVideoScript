@@ -1,0 +1,13 @@
+# This scenario is correct only because of its dwell: in fast mode the dwell is
+# not enacted and the sort has not finished when the list is observed.
+scenario: 1
+name: runner/dwell-dependent
+pack: notes-app
+stage:
+  - use: seed-notes
+    with: { fixture: ../../conformance/fixtures/three-notes.json }
+  - use: launch-app
+steps:
+  - click: 'toolbar/toolbar-button[label="Sort"]'
+    dwell: 600ms
+  - expect: { at: note-list, assert: "sorted-by(title)" }
