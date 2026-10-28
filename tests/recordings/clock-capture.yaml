@@ -1,0 +1,16 @@
+scenario: 1
+name: recordings/clock-capture
+pack: notes-app
+summary: Captures of a window whose title row shows the live time of day.
+stage:
+  - use: seed-notes
+    with: { fixture: ../../conformance/fixtures/three-notes.json }
+  - use: launch-app
+    with: { clock: true }
+steps:
+  - expect: { at: clock, present: true }
+  - key: Down
+  - capture: { name: first-selected }
+  - key: Down
+  - key: Down
+  - capture: { name: last-selected, of: note-list }

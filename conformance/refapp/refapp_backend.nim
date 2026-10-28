@@ -34,11 +34,14 @@ type
     realistic: bool
     t0: MonoTime
     without: seq[string]           ## capabilities withheld (to qualify `unsupported`)
+    clockAt: string                ## set-clock: the time the application shows
+    rec: tuple[on, deterministic: bool, dir: string, t0: MonoTime, events: seq[JsonNode]]
+      ## the cast being recorded: the screen at every step
 
 const Capabilities = ["input.key", "input.chord", "input.text", "input.pointer.move",
                       "input.pointer.click", "input.pointer.drag", "input.wheel", "input.hover",
                       "observe.text", "observe.geometry", "observe.focus", "sync.event",
-                      "record.still"]
+                      "record.still", "record.cast", "record.mask"]
 
 proc nowMs(st: RefappState): int64 = (getMonoTime() - st.t0).inMilliseconds
 
@@ -437,6 +440,17 @@ proc hitAt(st: RefappState; x, y: float): Option[string] =
       else: segs.add e.role
   if segs.len == 0: some(root.role) else: some(segs.join("/"))
 
+proc maskedScreen(st: RefappState; mask: JsonNode): seq[string] =
+  ## The screen's rows, with every masked instance's cells drawn as a fixed
+  ## pattern: a declared volatile region (a clock) is the same in every capture.
+  result = st.app.screenText
+  for id in mask.getElems:
+    let e = st.elementOf(id.getStr)
+    for r in e.rect.row ..< min(result.len, e.rect.row + e.rect.h):
+      var runes = result[r].toRunes
+      for c in e.rect.col ..< min(runes.len, e.rect.col + e.rect.w): runes[c] = "#".runeAt(0)
+      result[r] = $runes
+
 proc newRefappBackend*(defect: PlantedDefect = dfNone; without: seq[string] = @[]): Backend =
   let st = RefappState(defect: defect, t0: getMonoTime(), without: without)
   result = Backend()
@@ -460,7 +474,15 @@ proc newRefappBackend*(defect: PlantedDefect = dfNone; without: seq[string] = @[
       st.app = newApp(args{"width"}.getInt(60), args{"height"}.getInt(16),
                       proc (): int64 = st.nowMs)
       if st.fixture != nil: st.app.loadNotes(st.fixture)
-    of "set-clock": discard   # the application shows no clock
+      if st.clockAt.len > 0: st.app.wallClock = fixedClock(st.clockAt)
+      elif args{"clock"}.getBool(false): st.app.wallClock = liveClock()
+    of "set-clock":
+      # stops the clock the application shows; one already showing the live
+      # time is not changed behind its back
+      if st.app != nil and st.app.wallClock != nil:
+        raise backendError(beStage, "set-clock: the application already shows the live clock; " &
+          "set the clock before launch-app")
+      st.clockAt = args{"time"}.getStr
     of "mark-started":
       let path = args{"path"}.getStr
       writeFile((if path.isAbsolute: path else: base / path), "the stage ran\n")
@@ -477,11 +499,35 @@ proc newRefappBackend*(defect: PlantedDefect = dfNone; without: seq[string] = @[
     st.awaitCond(condition, timeoutMs)
   result.record = proc (op: RecordOp; args: JsonNode): JsonNode =
     result = %*{"files": []}
-    if op == recStill:
+    proc frame(t: float) =
+      st.rec.events.add %*[t, "o", "\e[2J\e[H" & st.maskedScreen(args{"mask"}).join("\r\n")]
+    case op
+    of recStart:
+      st.requireApp()
+      st.rec = (true, args{"deterministic"}.getBool(false), args{"dir"}.getStr("."), getMonoTime(),
+                @[])
+      frame(0.0)
+    of recMark:
+      if st.rec.on and st.app != nil:
+        # a deterministic cast is on the virtual timeline: no wall-clock time in it
+        frame(if st.rec.deterministic: args{"virtualMs"}.getFloat / 1000
+              else: float((getMonoTime() - st.rec.t0).inMicroseconds) / 1e6)
+    of recStop:
+      if st.rec.on:
+        let path = st.rec.dir / "session.cast"
+        createDir(st.rec.dir)
+        var header = %*{"version": 2, "width": st.app.width, "height": st.app.height}
+        if not st.rec.deterministic: header["timestamp"] = %int(epochTime())
+        var lines = @[$header]
+        for e in st.rec.events: lines.add $e
+        writeFile(path, lines.join("\n") & "\n")
+        st.rec.on = false
+        result["files"] = %[path]
+    of recStill:
       st.requireApp()
       let path = args{"dir"}.getStr(".") / args{"path"}.getStr("still") & ".txt"
       createDir(path.parentDir)
-      writeFile(path, st.app.screenText.join("\n") & "\n")
+      writeFile(path, st.maskedScreen(args{"mask"}).join("\n") & "\n")
       result["files"] = %[path]
   result.hit = proc (x, y: float): Option[string] = st.hitAt(x, y)
   result.close = proc () = discard

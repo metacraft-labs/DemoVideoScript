@@ -1,0 +1,15 @@
+scenario: 1
+name: recordings/stopped-clock-capture
+pack: notes-app
+summary: The same captures with the clock stopped before the application starts.
+stage:
+  - use: seed-notes
+    with: { fixture: ../../conformance/fixtures/three-notes.json }
+  - use: set-clock
+    with: { time: "09:00:00" }
+  - use: launch-app
+    with: { clock: true }
+steps:
+  - expect: { at: clock, time: "09:00:00" }
+  - key: Down
+  - capture: { name: first-selected }

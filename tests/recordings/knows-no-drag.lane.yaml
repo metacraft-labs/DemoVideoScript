@@ -1,0 +1,8 @@
+lane: 1
+name: knows-no-drag
+pack: ../../conformance/pack/notes-app.pack.yaml
+backend: refapp-no-drag
+applicable:
+  - ../../conformance/scenarios/archive-from-keyboard.yaml
+unsupported:
+  - ../../conformance/scenarios/drag-to-reorder.yaml

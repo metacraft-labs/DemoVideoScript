@@ -13,7 +13,7 @@
 ## turns the bytes a terminal sends into those events, and every build feeds the
 ## core through it or through the same event types.
 
-import std/[json, strutils, unicode, algorithm, sets, tables]
+import std/[json, strutils, unicode, algorithm, sets, tables, times]
 
 type
   Clock* = proc (): int64 {.closure.}   ## milliseconds
@@ -98,6 +98,10 @@ type
     keymap*: Table[string, string]   ## operation -> chord
     loadedGeneration*: int
     events*: int                     ## input events processed
+    wallClock*: proc (): string {.closure.}
+      ## The time of day shown in the title row (HH:MM:SS); nil shows none.
+      ## A live clock is the volatile region a documentation capture must
+      ## declare (DemoVideoScript-Format §9.2).
 
 const
   OpDelay* = 150'i64                 ## how long an asynchronous operation takes
@@ -112,6 +116,25 @@ proc defaultKeymap*(): Table[string, string] =
 proc newApp*(width = 60, height = 16; clock: Clock): App =
   App(width: width, height: height, clock: clock, keymap: defaultKeymap(),
       status: "Ready")
+
+proc clockText*(t: DateTime): string =
+  t.format("HH:mm:ss")
+
+proc liveClock*(): proc (): string {.closure.} =
+  ## The wall clock, as the title row shows it.
+  result = proc (): string = clockText(now())
+
+proc fixedClock*(at: string): proc (): string {.closure.} =
+  ## A clock stopped at `at`: an ISO 8601 date-time (its time of day is shown)
+  ## or a time of day, HH:MM:SS.
+  var shown = at
+  if 'T' in at:
+    shown = at[at.find('T') + 1 .. ^1]
+  if shown.len >= 8: shown = shown[0 ..< 8]
+  result = proc (): string = shown
+
+proc clockRect*(app: App): Rect =
+  Rect(row: 0, col: (app.width - 8) div 2, w: 8, h: 1)
 
 proc loadNotes*(app: App; j: JsonNode) =
   app.notes.setLen(0)
@@ -546,6 +569,8 @@ proc surface*(app: App): Element =
   result.children.add list
   result.children.add el("status-bar", Rect(row: app.height - 1, col: 0, w: w, h: 1),
     %*{"message": app.status})
+  if app.wallClock != nil:
+    result.children.add el("clock", app.clockRect, %*{"time": app.wallClock()})
   if app.dialogOpen:
     let d = app.dialogRect
     var dlg = el("dialog", d, %*{"title": "Rename"}, @[("title", "Rename")])
@@ -590,6 +615,7 @@ proc render*(app: App): seq[seq[Cell]] =
   # the list's size, right-aligned: what a reader of the screen counts by
   let size = $app.view.len & " notes "
   result.put(0, app.width - size.len, size)
+  if app.wallClock != nil: result.put(0, app.clockRect.col, app.wallClock())
   for i, b in ToolbarButtons:
     result.put(1, buttonCol(i), "[" & b & "]", reverse = app.hoverLabel == b)
   result.put(2, 0, "Search: ")

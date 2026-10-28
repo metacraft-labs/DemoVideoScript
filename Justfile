@@ -38,7 +38,7 @@ build-web:
 
 # Unit suites, the command-line suite against the built binary, and the
 # schema/parser agreement check against independent reference implementations.
-test: build test-unit test-cli test-schema-agreement test-neutrality-self test-runner test-protocol test-conformance
+test: build test-unit test-cli test-schema-agreement test-neutrality-self test-runner test-recordings test-protocol test-conformance
 
 test-unit:
     @mkdir -p {{build_dir}}/test-bin
@@ -55,6 +55,11 @@ test-cli:
 # The runner against the reference backend, in process and over JSON lines.
 test-runner:
     DVS_BIN_DIR={{bin}} nim c -r {{nim_flags}} --nimcache:{{build_dir}}/nimcache/test_runner -o:{{build_dir}}/test-bin/test_runner tests/test_runner.nim
+
+# Recordings, retention, lanes, deterministic captures and citations (§9).
+test-recordings:
+    @mkdir -p {{build_dir}}/test-bin
+    DVS_BIN_DIR={{bin}} nim c -r {{nim_flags}} --nimcache:{{build_dir}}/nimcache/test_recordings -o:{{build_dir}}/test-bin/test_recordings tests/test_recordings.nim
 
 # Every protocol message, both directions, against the published schema.
 test-protocol:

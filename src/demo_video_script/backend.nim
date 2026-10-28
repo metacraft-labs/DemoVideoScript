@@ -74,6 +74,10 @@ type
     hit*: proc (x, y: float): Option[string] {.closure.}
       ## The deepest role instance at a point, as a locator (tooling only).
     close*: proc () {.closure.}
+    log*: proc (): string {.closure.}
+      ## What the backend wrote about itself (an out-of-process backend's
+      ## stderr), for a failed run's `failure/backend.log`; nil when it keeps
+      ## no log.
 
 proc backendError*(kind: BackendErrorKind; msg: string): ref BackendError =
   result = newException(BackendError, msg)
@@ -81,7 +85,8 @@ proc backendError*(kind: BackendErrorKind; msg: string): ref BackendError =
 
 proc toJson*(h: Hello): JsonNode =
   %*{"backend": h.backend, "version": h.version, "platform": h.platform,
-     "capabilities": h.capabilities, "bindings": h.bindings, "units": h.units}
+     "capabilities": h.capabilities,
+     "bindings": (if h.bindings == nil: newJNull() else: h.bindings), "units": h.units}
 
 proc helloFromJson*(j: JsonNode): Hello =
   result.backend = j{"backend"}.getStr

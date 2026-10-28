@@ -25,7 +25,7 @@ const
                    "input.pointer.click", "input.pointer.drag", "input.wheel", "input.hover",
                    "observe.text", "observe.geometry", "observe.style", "observe.image",
                    "observe.focus", "sync.event", "sync.visual-settle",
-                   "record.cast", "record.video", "record.still"]
+                   "record.cast", "record.video", "record.still", "record.mask"]
 
 type
   Ctx* = object

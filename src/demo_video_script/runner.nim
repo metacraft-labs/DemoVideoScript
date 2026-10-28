@@ -7,8 +7,9 @@
 ## delegated by name to the backend, pacing and dwell enacted in realistic runs,
 ## per-step results and the recording manifest written as the run goes.
 
-import std/[json, os, times, monotimes, tables, strutils, options, sets, math]
-import ./model, ./yaml, ./scenario, ./lint, ./backend, ./eval, ./pacing, ./emit, ./predicates
+import std/[json, os, osproc, times, monotimes, tables, strutils, options, sets, math]
+import ./model, ./yaml, ./scenario, ./lint, ./backend, ./eval, ./pacing, ./emit, ./predicates,
+  ./grammar
 
 const RunnerVersion* = "0.1.0"
 
@@ -34,6 +35,19 @@ type
     settleTimeoutMs*: int
     probeReads*: bool           ## read every property twice and compare (§4.4.1, §12)
     scenarioDir*: string        ## base for the stage's relative paths
+    runId*: string              ## the run directory's name, recorded in the manifest
+    deterministic*: bool
+      ## A documentation capture (§9.2): virtual timing, the environment
+      ## substitution table, the pinned regions masked, and every capture
+      ## taken twice — a region that changed between the takes and is not
+      ## pinned fails the run.
+    environment*: seq[(string, string)]
+      ## Substitutions for the application's environment, passed to the
+      ## stage as `$env` (the binding applies them when it starts the
+      ## application).
+    pinned*: seq[string]        ## locators of the volatile regions a capture masks
+    pixelThreshold*: float      ## the SSIM two takes of a pixel capture must reach
+    volatileProbeMs*: int       ## the interval between the two takes
 
   StepResult* = object
     index*: int                 ## 1-based, in execution order
@@ -49,6 +63,7 @@ type
     observed*: JsonNode
     variant*: string
     artifacts*: seq[string]
+    name*: string               ## a capture step's capture name
 
   Unsupported* = object
     path*: string
@@ -89,6 +104,8 @@ type
     seedCounter: int64
     res: RunResult
     capSet: HashSet[string]
+    startedAt: string
+    recordingStartMs: float
 
 proc ms(r: Run): float = float((getMonoTime() - r.t0).inNanoseconds) / 1e6
 
@@ -507,6 +524,7 @@ proc stepJson*(sr: StepResult): JsonNode =
   if sr.observed != nil and sr.observed.len > 0: result["observed"] = sr.observed
   if sr.variant != "": result["variant"] = %sr.variant
   if sr.artifacts.len > 0: result["artifacts"] = %sr.artifacts
+  if sr.name != "": result["name"] = %sr.name
 
 proc manifestJson*(res: RunResult; r: Run): JsonNode =
   var steps = newJArray()
@@ -515,18 +533,86 @@ proc manifestJson*(res: RunResult; r: Run): JsonNode =
   for u in res.unsupported: uns.add %*{"step": u.path, "capability": u.capability}
   var diags = newJArray()
   for d in res.diagnostics: diags.add %($d)
+  var env = newJObject()
+  for (k, v) in r.opts.environment: env[k] = %v
   %*{"format": "demo-video-script.run.v1", "runner": RunnerVersion,
      "scenario": {"name": res.scenario, "file": r.sc.file}, "pack": r.pack.name,
      "backend": r.hello.toJson, "mode": $res.mode, "seed": res.seed,
+     "runId": r.opts.runId, "startedAt": r.startedAt,
+     "deterministic": r.opts.deterministic, "environment": env, "pinned": r.opts.pinned,
+     "recordingStartMs": r.recordingStartMs,
      "outcome": $res.outcome, "message": res.message, "durationMs": res.durationMs,
      "timingDependent": res.timingDependent,
      "steps": steps, "unsupported": uns, "diagnostics": diags, "media": res.media}
 
-proc runScenario*(sc: Scenario; pack: Pack; b: Backend; opts: RunOptions): RunResult =
-  var r = Run(sc: sc, pack: pack, b: b, opts: opts, t0: getMonoTime())
+# --- documentation captures (§9.2) --------------------------------------------------------
+
+proc pinnedInstances(r: var Run): JsonNode =
+  ## The instances of the declared volatile regions that are on screen now.
+  result = newJArray()
+  for text in r.opts.pinned:
+    let res = r.b.locate(locatorJson(parseLocator(text)))
+    case res.outcome
+    of loOne: result.add %res.instance
+    of loNone: discard
+    of loAmbiguous: fail("the pinned region '" & text & "' is ambiguous: " &
+                         res.candidates.join(", "))
+
+proc ssim(a, b: string): float =
+  ## The structural similarity of two images, by ffmpeg's `ssim` filter.
+  let ff = getEnv("FFMPEG_BIN", "ffmpeg")
+  let (o, code) = execCmdEx(quoteShellCommand([ff, "-hide_banner", "-nostats", "-i", a, "-i", b,
+                                               "-lavfi", "ssim", "-f", "null", "-"]))
+  if code != 0: fail("comparing two takes with ffmpeg failed: " & o.strip)
+  let i = o.rfind("All:")
+  if i < 0: fail("ffmpeg reported no SSIM: " & o.strip)
+  parseFloat(o[i + 4 .. ^1].strip.split(' ')[0])
+
+proc changedRows(a, b: string): seq[int] =
+  let la = a.splitLines
+  let lb = b.splitLines
+  for k in 0 ..< max(la.len, lb.len):
+    if (if k < la.len: la[k] else: "") != (if k < lb.len: lb[k] else: ""): result.add k + 1
+
+proc checkStable(r: var Run; args: JsonNode; files: seq[string]) =
+  ## A deterministic capture is taken a second time, `volatileProbeMs` later;
+  ## anything that changed in between is a volatile region the run did not
+  ## declare, and fails the run rather than publishing an unstable capture.
+  sleepMs(float(r.opts.volatileProbeMs))
+  var again = args.copy
+  again["path"] = %(args["path"].getStr & ".take2")
+  again["mask"] = r.pinnedInstances()
+  let res = r.b.record(recStill, again)
+  var second: seq[string]
+  for f in res{"files"}.getElems: second.add f.getStr
+  defer:
+    for f in second: removeFile(f)
+  if second.len != files.len: fail("the second take of the capture produced other files")
+  for k, f in files:
+    let g = second[k]
+    if f.endsWith(".png"):
+      let v = ssim(f, g)
+      if v < r.opts.pixelThreshold:
+        fail("an undeclared volatile region: " & f.lastPathPart & " changed between two takes " &
+          $r.opts.volatileProbeMs & " ms apart (SSIM " & formatFloat(v, ffDecimal, 4) &
+          " below " & $r.opts.pixelThreshold & "); declare it with --pin")
+    elif readFile(f) != readFile(g):
+      let rows = changedRows(readFile(f), readFile(g))
+      fail("an undeclared volatile region: " & f.lastPathPart & " changed between two takes " &
+        $r.opts.volatileProbeMs & " ms apart" &
+        (if rows.len > 0 and rows.len < 20: " (lines " & rows.join(", ") & ")" else: "") &
+        "; declare it with --pin")
+
+proc runScenario*(sc: Scenario; pack: Pack; b: Backend; options: RunOptions): RunResult =
+  var r = Run(sc: sc, pack: pack, b: b, opts: options, t0: getMonoTime(),
+              startedAt: now().utc.format("yyyy-MM-dd'T'HH:mm:ss'.'fff'Z'"))
+  if r.opts.deterministic: r.opts.mode = tmVirtual
+  if r.opts.pixelThreshold <= 0: r.opts.pixelThreshold = 0.995
+  if r.opts.volatileProbeMs <= 0: r.opts.volatileProbeMs = 1200
   if r.opts.timeoutMs <= 0: r.opts.timeoutMs = 5000
   if r.opts.settleTimeoutMs <= 0: r.opts.settleTimeoutMs = 5000
-  r.res = RunResult(scenario: sc.name, mode: opts.mode, seed: opts.seed, runDir: opts.runDir)
+  let opts = r.opts
+  r.res = RunResult(scenario: sc.name, mode: r.opts.mode, seed: opts.seed, runDir: opts.runDir)
   template finish(oc: RunOutcome; msg: string) =
     r.res.outcome = oc
     r.res.message = msg
@@ -561,6 +647,10 @@ proc runScenario*(sc: Scenario; pack: Pack; b: Backend; opts: RunOptions): RunRe
     r.expand(sc.steps, "", "", 0, plan, missing)
   except ValueError as e:
     finish(roError, e.msg)
+  # a documentation capture with declared volatile regions needs a backend
+  # that masks them (§9.2); without it the captures would not be stable
+  if opts.deterministic and opts.pinned.len > 0 and "record.mask" notin r.capSet:
+    missing.add Unsupported(path: "--pin", capability: "record.mask")
   if missing.len > 0:
     r.res.unsupported = missing
     var parts: seq[string]
@@ -571,6 +661,10 @@ proc runScenario*(sc: Scenario; pack: Pack; b: Backend; opts: RunOptions): RunRe
     for call in sc.stage:
       var args = (if call.args == nil: newJObject() else: call.args.toJson)
       args["$base"] = %opts.scenarioDir
+      if opts.environment.len > 0:
+        var env = newJObject()
+        for (k, v) in opts.environment: env[k] = %v
+        args["$env"] = env
       b.stage(call.use, args)
     b.endStage()
   except BackendError as e:
@@ -579,7 +673,12 @@ proc runScenario*(sc: Scenario; pack: Pack; b: Backend; opts: RunOptions): RunRe
   if recording:
     createDir(opts.runDir / "steps")
     try:
-      discard b.record(recStart, %*{"dir": opts.runDir})
+      r.recordingStartMs = r.ms
+      var start = %*{"dir": opts.runDir, "deterministic": opts.deterministic}
+      if opts.deterministic:
+        try: start["mask"] = r.pinnedInstances()
+        except StepFailure: discard
+      discard b.record(recStart, start)
     except BackendError as e:
       finish(roError, "record: " & e.msg)
   var vcursor = 0.0
@@ -599,7 +698,11 @@ proc runScenario*(sc: Scenario; pack: Pack; b: Backend; opts: RunOptions): RunRe
     sr.startMs = r.ms
     sr.virtualStartMs = vcursor
     if recording:
-      try: discard b.record(recMark, %*{"step": k + 1, "path": es.path, "kind": $s.kind})
+      var mark = %*{"step": k + 1, "path": es.path, "kind": $s.kind, "virtualMs": vcursor}
+      if opts.deterministic:
+        try: mark["mask"] = r.pinnedInstances()
+        except StepFailure: discard
+      try: discard b.record(recMark, mark)
       except BackendError: discard
     var pacing = 0.0
     try:
@@ -617,15 +720,19 @@ proc runScenario*(sc: Scenario; pack: Pack; b: Backend; opts: RunOptions): RunRe
         r.waitStep(s, observed)
         sr.observed = observed
       of stCapture:
+        sr.name = s.name
         var args = %*{"name": s.name, "path": "steps" / ($(k + 1) & "-" & s.name)}
         if s.hasCaptureOf:
           let lr = r.locateOne(s.captureOf.at)
           args["instance"] = %lr.instance
+        if opts.deterministic:
+          args["mask"] = r.pinnedInstances()
         if recording or opts.runDir != "":
           createDir(opts.runDir / "steps")
           args["dir"] = %opts.runDir
           let res = b.record(recStill, args)
           for f in res{"files"}.getElems: sr.artifacts.add f.getStr
+          if opts.deterministic: r.checkStable(args, sr.artifacts)
       of stExt:
         b.send(%*{"ext": s.name, "with": (if s.args == nil: newJObject() else: s.args.toJson)})
       else: discard
@@ -647,12 +754,16 @@ proc runScenario*(sc: Scenario; pack: Pack; b: Backend; opts: RunOptions): RunRe
         continue
     sr.endMs = r.ms
     if s.dwell > 0 and opts.mode == tmRealistic: sleepMs(float(s.dwell))
-    vcursor += (sr.endMs - sr.startMs) + pacing + max(0.0, float(s.dwell))
+    # a deterministic run's timeline is the scenario's alone: what the
+    # machine took to run a step is not part of it
+    let took = (if opts.deterministic: 0.0 else: sr.endMs - sr.startMs)
+    vcursor += took + pacing + max(0.0, float(s.dwell))
     sr.virtualEndMs = vcursor
     if recording:
       let base = "steps" / $(k + 1)
       writeJson(opts.runDir / (base & "-state.json"), %*{"step": stepJson(sr)})
-      if "record.still" in r.capSet:
+      # a capture step's still is its capture
+      if "record.still" in r.capSet and s.kind != stCapture:
         try:
           let res = b.record(recStill, %*{"dir": opts.runDir, "path": base & "-" & $s.kind,
                                             "name": $s.kind})
@@ -664,6 +775,9 @@ proc runScenario*(sc: Scenario; pack: Pack; b: Backend; opts: RunOptions): RunRe
         createDir(opts.runDir / "failure")
         writeJson(opts.runDir / "failure" / "observation.json",
           %*{"step": stepJson(sr)})
+        writeFile(opts.runDir / "failure" / "backend.log",
+          (if b.log == nil: "(an in-process backend: its messages are in the run's output)\n"
+           else: b.log()))
         if "record.still" in r.capSet:
           try: discard b.record(recStill, %*{"dir": opts.runDir, "path": "failure/surface",
                                              "name": "surface"})

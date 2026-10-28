@@ -260,7 +260,17 @@ runner, once, for every backend.
 dvs lint <scenario>... [--pack <pack.yaml>] [--json]   exit 0 clean, 1 warnings, 2 errors
 dvs lint --pack <pack.yaml>                             lint a pack on its own
 dvs parse <scenario>                                    print the normalised scenario (JSON)
-dvs schema scenario|pack                                print a published schema
+dvs schema scenario|pack|backend-protocol               print a published schema
+dvs run <scenario> --pack <pack> --backend <name | cmd:PROGRAM ARGS>
+                                                        run it; exit 0 passed, 1 failed,
+                                                        3 unsupported, 2 error
+dvs conformance --pack <pack> --backend <...> <scenario>...
+dvs lane <lane.yaml>                                    run a test lane
+dvs capture-path scenario=<name> capture=<name>         resolve a citation to a file
+dvs capture-path scenario=<name> steps=<from>..<to>     … or to a span of the cast
 ```
+
+See [recordings.md](recordings.md) for run directories, lanes, documentation captures
+and citations.
 
 The normalised form expands every shorthand and is itself a valid scenario.

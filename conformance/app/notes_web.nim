@@ -11,7 +11,8 @@
 ## the page behaves as the terminal and window builds do.
 ##
 ## The page reads its notes from `window.DVS_FIXTURE` (a JSON string, set
-## before the page loads) and its size from the URL (`?w=60&h=16`).
+## before the page loads), its size from the URL (`?w=60&h=16`) and its clock
+## from `?clock=live|HH:MM:SS`.
 
 import std/[json, strutils]
 import std/dom except Element
@@ -22,6 +23,8 @@ proc perfNow(): float {.importjs: "performance.now()".}
 proc fixtureText(): cstring {.importjs: "(window.DVS_FIXTURE || '')".}
 proc queryInt(name: cstring; default: int): int {.importjs:
   "(parseInt(new URLSearchParams(window.location.search).get(#)) || #)".}
+proc queryStr(name: cstring): cstring {.importjs:
+  "(new URLSearchParams(window.location.search).get(#) || '')".}
 proc setIntervalMs(f: proc () {.closure.}; ms: int) {.importjs: "setInterval(#, #)".}
 proc cellWidthPx(e: dom.Element): float {.importjs: "#.getBoundingClientRect().width".}
 proc boxLeft(e: dom.Element): float {.importjs: "#.getBoundingClientRect().left".}
@@ -43,6 +46,12 @@ const CellH = 20.0
 var cellW = 9.6
 let t0 = perfNow()
 let app = newApp(queryInt("w", 60), queryInt("h", 16), proc (): int64 = int64(perfNow() - t0))
+block:
+  # `?clock=live` shows the time of day in the title row, `?clock=HH:MM:SS` a
+  # stopped clock
+  let c = $queryStr("clock")
+  if c == "live": app.wallClock = liveClock()
+  elif c.len > 0: app.wallClock = fixedClock(c)
 
 proc esc(s: string): string =
   s.multiReplace(("&", "&amp;"), ("<", "&lt;"), (">", "&gt;"), ("\"", "&quot;"))

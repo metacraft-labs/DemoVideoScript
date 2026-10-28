@@ -20,6 +20,7 @@ roles:
       status-bar: one
       dialog: optional
       context-menu: optional
+      clock: optional
 
   toolbar:
     children: { toolbar-button: many }
@@ -90,6 +91,11 @@ roles:
   status-bar:
     properties: { message: text }
 
+  # The time of day in the title row, when the application is launched with a
+  # clock: the volatile region a documentation capture must declare.
+  clock:
+    properties: { time: text }
+
 sync:
   settled: ~
   idle: ~
@@ -111,8 +117,8 @@ stages:
     summary: Write the notes the application starts with.
     params: { fixture: text }
   launch-app:
-    summary: Start the application with the seeded notes.
-    params: { width: int, height: int }
+    summary: Start the application with the seeded notes (with a clock in its title row when asked).
+    params: { width: int, height: int, clock: bool }
   set-clock:
     summary: Fix the application's clock.
     params: { time: text }

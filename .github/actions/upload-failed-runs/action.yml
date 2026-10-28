@@ -1,0 +1,44 @@
+name: Upload failed scenario runs
+description: >-
+  Uploads the run directories of failed DemoVideoScript runs (the ones with a failure/
+  directory) under <build-dir>/scenario-runs as one job artifact. Passing runs and the
+  rest of the build directory are not uploaded.
+inputs:
+  build-dir:
+    description: The build directory the runs were recorded under.
+    default: build
+  name:
+    description: The artifact's name.
+    default: failed-scenario-runs
+  retention-days:
+    description: How long the artifact is kept.
+    default: "7"
+runs:
+  using: composite
+  steps:
+    - name: Collect the failed runs
+      id: collect
+      shell: bash
+      run: |
+        set -euo pipefail
+        out="$RUNNER_TEMP/failed-scenario-runs"
+        rm -rf "$out"; mkdir -p "$out"
+        found=0
+        if [ -d "${{ inputs.build-dir }}/scenario-runs" ]; then
+          while IFS= read -r -d '' f; do
+            run="$(dirname "$f")"
+            rel="${run#"${{ inputs.build-dir }}/scenario-runs/"}"
+            mkdir -p "$out/$rel"
+            cp -R "$run/." "$out/$rel/"
+            found=$((found + 1))
+          done < <(find "${{ inputs.build-dir }}/scenario-runs" -mindepth 4 -maxdepth 4 -type d -name failure -print0)
+        fi
+        echo "failed scenario runs: $found"
+        echo "dir=$out" >> "$GITHUB_OUTPUT"
+        echo "found=$found" >> "$GITHUB_OUTPUT"
+    - if: steps.collect.outputs.found != '0'
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.name }}
+        path: ${{ steps.collect.outputs.dir }}
+        retention-days: ${{ inputs.retention-days }}

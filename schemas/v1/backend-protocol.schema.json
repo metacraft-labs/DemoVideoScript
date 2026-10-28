@@ -200,7 +200,8 @@
               "sync.visual-settle",
               "record.cast",
               "record.video",
-              "record.still"
+              "record.still",
+              "record.mask"
             ]
           }
         },
@@ -431,6 +432,13 @@
               "properties": {
                 "$base": {
                   "type": "string"
+                },
+                "$env": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "$comment": "a deterministic run's environment substitutions, for the application the stage starts"
                 }
               }
             }
@@ -610,6 +618,22 @@
             },
             "kind": {
               "type": "string"
+            },
+            "virtualMs": {
+              "type": "number",
+              "minimum": 0,
+              "$comment": "mark: the step's start on the virtual timeline"
+            },
+            "deterministic": {
+              "type": "boolean",
+              "$comment": "start: a documentation capture; media carry no wall-clock time"
+            },
+            "mask": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "$comment": "still: instances whose region the still masks (declared volatile regions)"
             }
           }
         },

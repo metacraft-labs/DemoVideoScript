@@ -1,7 +1,10 @@
 ## The conformance application's native-window build: the headless core
 ## (notes_core.nim) in an X11 window, drawn with Xlib.
 ##
-##   notes-x11 [--fixture FILE] [--width W --height H]
+##   notes-x11 [--fixture FILE] [--width W --height H] [--clock | --clock-at HH:MM:SS]
+##
+## `--clock` shows the time of day in the title row; `--clock-at` shows a
+## stopped clock.
 ##
 ## The cells are drawn in the core `fixed` font into an off-screen pixmap and
 ## put on the window scaled by an integer factor (pixel replication), black on
@@ -110,14 +113,17 @@ proc main() =
   var fixture = ""
   var width = 60
   var height = 16
+  var clock: proc (): string {.closure.} = nil
   var k = 1
   while k <= paramCount():
     case paramStr(k)
     of "--fixture": (inc k; fixture = paramStr(k))
     of "--width": (inc k; width = parseInt(paramStr(k)))
     of "--height": (inc k; height = parseInt(paramStr(k)))
+    of "--clock": clock = liveClock()
+    of "--clock-at": (inc k; clock = fixedClock(paramStr(k)))
     else:
-      stderr.writeLine "usage: notes-x11 [--fixture FILE] [--width W --height H]"
+      stderr.writeLine "usage: notes-x11 [--fixture FILE] [--width W --height H] [--clock | --clock-at HH:MM:SS]"
       quit 64
     inc k
   let d = XOpenDisplay(nil)
@@ -153,6 +159,7 @@ proc main() =
   let t0 = getMonoTime()
   let app = newApp(width, height, proc (): int64 = (getMonoTime() - t0).inMilliseconds)
   if fixture.len > 0: app.loadNotes(parseFile(fixture))
+  app.wallClock = clock
   var last: seq[string]
   proc draw(force: bool) =
     let rows = app.render

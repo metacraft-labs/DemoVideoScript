@@ -8,15 +8,22 @@
 ##   schema scenario|pack|backend-protocol print a published JSON Schema
 ##   run <scenario> --pack <pack.yaml> --backend <name | cmd:PROGRAM [ARG…]>
 ##       [--mode fast|realistic|virtual] [--seed N] [--record off|on-failure|always]
-##       [--out DIR] [--json]
+##       [--out DIR | --build DIR] [--keep-runs N] [--keep-failure-days D]
+##       [--deterministic [--env NAME=VALUE]… [--pin LOCATOR]… [--pixel-threshold SSIM]]
+##       [--json]
 ##   conformance --pack <pack.yaml> --backend <…> [--defect NAME=<backend>]…
 ##       [--modes fast,realistic] <scenario>…
+##   lane <lane.yaml> [--build DIR]       run a test lane against its expectations
+##   capture-path scenario=<name> capture=<name> [--backend NAME] [--build DIR]
+##   capture-path scenario=<name> steps=<from>..<to> [--backend NAME] [--build DIR]
+##                                        resolve a citation to a file (and a span)
 ##
 ## Exit status of `lint`: 0 clean, 1 warnings only, 2 errors, 64 usage.
 ## Exit status of `run`: 0 passed, 1 failed, 3 unsupported, 2 error, 64 usage.
 
 import std/[os, json, strutils, algorithm, tables, times]
-import ./yaml, ./model, ./scenario, ./pack, ./lint, ./emit, ./backend, ./runner, ./jsonlines
+import ./yaml, ./model, ./scenario, ./pack, ./lint, ./emit, ./backend, ./runner, ./jsonlines,
+  ./recordings
 
 type BackendFactory* = proc (): Backend
 
@@ -31,9 +38,14 @@ const
   dvs schema scenario|pack|backend-protocol
   dvs run <scenario> --pack <pack.yaml> --backend <name | cmd:PROGRAM [ARG...]>
       [--mode fast|realistic|virtual] [--seed N] [--record off|on-failure|always]
-      [--out DIR] [--json]
+      [--out DIR | --build DIR] [--keep-runs N] [--keep-failure-days D]
+      [--deterministic [--env NAME=VALUE]... [--pin LOCATOR]... [--pixel-threshold SSIM]]
+      [--json]
   dvs conformance --pack <pack.yaml> --backend <...> [--defect NAME=<backend>]...
       [--modes fast,realistic] <scenario>...
+  dvs lane <lane.yaml> [--build DIR]
+  dvs capture-path scenario=<name> capture=<name> [--backend NAME] [--build DIR]
+  dvs capture-path scenario=<name> steps=<from>..<to> [--backend NAME] [--build DIR]
 """
 
 proc usage() {.noreturn.} =
@@ -158,8 +170,12 @@ proc runOne*(scenarioPath: string; pack: Pack; sc: Scenario; b: Backend;
   finally:
     if b.close != nil: b.close()
 
+proc buildDirDefault(): string = getEnv("BUILD_DIR", "build")
+
 proc cmdRun(args: seq[string]; builtins: Table[string, BackendFactory]) =
   var scenarioPath, packPath, backendSpec, outDir = ""
+  var buildDir = buildDirDefault()
+  var retention = DefaultRetention
   var opts = RunOptions(mode: tmFast, record: rpOnFailure, seed: 1)
   var asJson = false
   var k = 0
@@ -176,25 +192,51 @@ proc cmdRun(args: seq[string]; builtins: Table[string, BackendFactory]) =
     of "--seed": opts.seed = parseBiggestInt(value())
     of "--record": opts.record = parseEnum[RecordPolicy](value())
     of "--out": outDir = value()
+    of "--build": buildDir = value()
+    of "--keep-runs": retention.runs = parseInt(value())
+    of "--keep-failure-days": retention.failureDays = parseFloat(value())
     of "--timeout": opts.timeoutMs = parseInt(value())
     of "--probe-reads": opts.probeReads = true
+    of "--deterministic": opts.deterministic = true
+    of "--env":
+      let v = value()
+      let eq = v.find('=')
+      if eq <= 0: usage()
+      opts.environment.add (v[0 ..< eq], v[eq + 1 .. ^1])
+    of "--pin": opts.pinned.add value()
+    of "--pixel-threshold": opts.pixelThreshold = parseFloat(value())
     of "--json": asJson = true
     else:
       if a.startsWith("-") or scenarioPath != "": usage()
       scenarioPath = a
     inc k
   if scenarioPath == "" or packPath == "" or backendSpec == "": usage()
+  if (opts.environment.len > 0 or opts.pinned.len > 0) and not opts.deterministic:
+    stderr.writeLine "dvs: --env and --pin configure a deterministic capture (--deterministic)"
+    quit 64
   let (sc, pack) = loadForRun(scenarioPath, packPath)
-  if outDir == "" and opts.record != rpOff:
-    outDir = getEnv("BUILD_DIR", "build") / "scenario-runs" / sc.name.replace('/', '-') /
-      backendSpec.split({':', ' ', '/'})[^1] / now().format("yyyyMMdd'T'HHmmss'.'fff")
-  opts.runDir = outDir
   var b: Backend
   try: b = openBackend(backendSpec, builtins)
   except CatchableError as e:
     stderr.writeLine "dvs: " & e.msg
     quit 2
+  var group = ""
+  if opts.record != rpOff:
+    opts.runId = newRunId()
+    if outDir == "":
+      var name = backendSpec.split({':', ' ', '/'})[^1]
+      try: name = b.hello().backend
+      except CatchableError: discard
+      group = runGroupDir(buildDir, sc.name, name)
+      outDir = group / opts.runId
+    try: checkRunDir(outDir)
+    except RunDirError as e:
+      if b.close != nil: b.close()
+      stderr.writeLine "dvs: " & e.msg
+      quit 2
+  opts.runDir = outDir
   let r = runOne(scenarioPath, pack, sc, b, opts)
+  if group != "": discard prune(group, retention)
   if asJson: echo $resultJson(r)
   else:
     for s in r.steps:
@@ -205,13 +247,131 @@ proc cmdRun(args: seq[string]; builtins: Table[string, BackendFactory]) =
       echo mark, " ", s.path, " ", s.kind, (if s.message != "": ": " & s.message else: "")
     echo $r.outcome, (if r.message != "": ": " & r.message else: "")
     for d in r.diagnostics: stderr.writeLine $d
-    if r.outcome in {roFailed, roError} and dirExists(r.runDir):
-      echo "recording: ", r.runDir
+  if r.outcome in {roFailed, roError} and dirExists(r.runDir):
+    # every failed run's recording is named, whatever the output format
+    (if asJson: stderr else: stdout).writeLine "recording: ", r.runDir
   case r.outcome
   of roPassed: quit 0
   of roFailed: quit 1
   of roUnsupported: quit 3
   of roError: quit 2
+
+proc cmdLane(args: seq[string]; builtins: Table[string, BackendFactory]) =
+  ## A lane (§4.9 rule 3): the (scenario, backend) pairs it expects to be
+  ## applicable and the ones it expects `unsupported`. An unexpected
+  ## `unsupported` fails the lane; an expected one is listed in its summary.
+  var lanePath = ""
+  var buildDir = buildDirDefault()
+  var k = 0
+  while k < args.len:
+    case args[k]
+    of "--build":
+      inc k
+      if k >= args.len: usage()
+      buildDir = args[k]
+    else:
+      if args[k].startsWith("-") or lanePath != "": usage()
+      lanePath = args[k]
+    inc k
+  if lanePath == "": usage()
+  let base = lanePath.absolutePath.parentDir
+  let lane = readYamlFile(lanePath).toJson
+  if lane{"lane"}.getInt(0) != 1:
+    stderr.writeLine "dvs: " & lanePath & ": not a lane file (expected `lane: 1`)"
+    quit 2
+  proc at(p: string): string = (if p.isAbsolute: p else: base / p)
+  let packPath = at(lane{"pack"}.getStr)
+  let spec = lane{"backend"}.getStr
+  let backendSpec = spec
+  var modes: seq[TimingMode]
+  for m in lane{"modes"}.getElems: modes.add parseEnum[TimingMode](m.getStr)
+  if modes.len == 0: modes = @[tmFast]
+  var retention = DefaultRetention
+  if lane{"retention"} != nil and lane["retention"].kind == JObject:
+    retention.runs = lane["retention"]{"runs"}.getInt(retention.runs)
+    retention.failureDays = lane["retention"]{"failure-days"}.getFloat(retention.failureDays)
+  var expected: seq[(string, bool)]   # (file, applicable)
+  for f in lane{"applicable"}.getElems: expected.add (at(f.getStr), true)
+  for f in lane{"unsupported"}.getElems: expected.add (at(f.getStr), false)
+  if expected.len == 0:
+    stderr.writeLine "dvs: " & lanePath & ": the lane names no scenario"
+    quit 2
+  var problems, expectedUnsupported, failedRuns: seq[string]
+  var passed = 0
+  for (f, applicable) in expected:
+    let (sc, pack) = loadForRun(f, packPath)
+    for m in modes:
+      let b = openBackend(backendSpec, builtins)
+      var name = spec
+      try: name = b.hello().backend
+      except CatchableError: discard
+      let group = runGroupDir(buildDir, sc.name, name)
+      let runId = newRunId()
+      let r = runOne(f, pack, sc, b, RunOptions(mode: m, record: rpOnFailure, seed: 1,
+                                                  runId: runId, runDir: group / runId))
+      discard prune(group, retention)
+      echo alignLeft($r.outcome, 12), alignLeft($m, 10), sc.name,
+        (if r.message != "" and r.outcome != roPassed: "  — " & r.message else: "")
+      case r.outcome
+      of roPassed:
+        if applicable: inc passed
+        else: problems.add sc.name & " (" & $m & "): passed, but the lane expects it unsupported" &
+                " — its expectation is stale"
+      of roUnsupported:
+        if applicable:
+          var caps: seq[string]
+          for u in r.unsupported: caps.add u.capability
+          problems.add sc.name & " (" & $m & "): unsupported, but the lane expects it to run (" &
+            caps.join(", ") & ")"
+        elif m == modes[0]:
+          var caps: seq[string]
+          for u in r.unsupported: caps.add u.capability
+          expectedUnsupported.add sc.name & " (" & caps.join(", ") & ")"
+      of roFailed, roError:
+        problems.add sc.name & " (" & $m & "): " & $r.outcome & ": " & r.message
+        if dirExists(r.runDir): failedRuns.add r.runDir
+  echo "lane ", lane{"name"}.getStr(lanePath.extractFilename), ": ", passed, " passed, ",
+    expectedUnsupported.len, " unsupported as expected, ", problems.len, " problem(s)"
+  for u in expectedUnsupported: echo "expected unsupported: ", u
+  for p in problems: echo "PROBLEM ", p
+  for d in failedRuns: echo "recording: ", d
+  quit (if problems.len == 0: 0 else: 1)
+
+proc cmdCapturePath(args: seq[string]) =
+  ## Resolves a citation — a scenario and a capture name, or a step range of
+  ## its cast — to the file the newest run produced. Never the reverse: a
+  ## path is not a citation.
+  var scenarioName, capture, steps, backendName = ""
+  var buildDir = buildDirDefault()
+  var k = 0
+  while k < args.len:
+    let a = args[k]
+    if a == "--build" or a == "--backend":
+      inc k
+      if k >= args.len: usage()
+      if a == "--build": buildDir = args[k] else: backendName = args[k]
+    elif a.startsWith("scenario="): scenarioName = a[9 .. ^1]
+    elif a.startsWith("capture="): capture = a[8 .. ^1]
+    elif a.startsWith("steps="): steps = a[6 .. ^1]
+    else: usage()
+    inc k
+  if scenarioName == "" or (capture == "") == (steps == ""): usage()
+  let run = newestRun(buildDir, scenarioName, backendName)
+  if run == "":
+    stderr.writeLine "dvs: no recorded run of '" & scenarioName & "' under " & runsRoot(buildDir)
+    quit 1
+  try:
+    if capture != "":
+      for p in capturePaths(run, capture): echo p
+    else:
+      let parts = steps.split("..")
+      if parts.len != 2: usage()
+      let span = castSpan(run, parseInt(parts[0]), parseInt(parts[1]))
+      echo $(%*{"file": span.file, "fromMs": span.fromMs, "toMs": span.toMs,
+                "virtual": span.virtual})
+  except KeyError as e:
+    stderr.writeLine "dvs: " & e.msg
+    quit 1
 
 proc cmdConformance(args: seq[string]; builtins: Table[string, BackendFactory]) =
   ## A backend is conformant (§12) when every scenario its capabilities admit
@@ -288,6 +448,8 @@ proc dvsMain*(builtins: Table[string, BackendFactory] = initTable[string, Backen
   of "parse": cmdParse(args[1 .. ^1])
   of "run": cmdRun(args[1 .. ^1], builtins)
   of "conformance": cmdConformance(args[1 .. ^1], builtins)
+  of "lane": cmdLane(args[1 .. ^1], builtins)
+  of "capture-path": cmdCapturePath(args[1 .. ^1])
   of "schema":
     if args.len != 2: usage()
     case args[1]

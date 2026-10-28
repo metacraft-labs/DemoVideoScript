@@ -1,7 +1,10 @@
 ## The conformance application's terminal build: the headless core
 ## (notes_core.nim) on a real terminal.
 ##
-##   notes-tui [--fixture FILE] [--width W --height H]
+##   notes-tui [--fixture FILE] [--width W --height H] [--clock | --clock-at HH:MM:SS]
+##
+## `--clock` shows the time of day in the title row; `--clock-at` shows a
+## stopped clock.
 ##
 ## It draws the core's cells with ANSI sequences on the alternate screen,
 ## enables SGR mouse reporting with any-motion tracking (DEC 1003, 1006) so
@@ -55,19 +58,23 @@ proc main() =
   var fixture = ""
   var width = 60
   var height = 16
+  var clock: proc (): string {.closure.} = nil
   var k = 1
   while k <= paramCount():
     case paramStr(k)
     of "--fixture": (inc k; fixture = paramStr(k))
     of "--width": (inc k; width = parseInt(paramStr(k)))
     of "--height": (inc k; height = parseInt(paramStr(k)))
+    of "--clock": clock = liveClock()
+    of "--clock-at": (inc k; clock = fixedClock(paramStr(k)))
     else:
-      stderr.writeLine "usage: notes-tui [--fixture FILE] [--width W --height H]"
+      stderr.writeLine "usage: notes-tui [--fixture FILE] [--width W --height H] [--clock | --clock-at HH:MM:SS]"
       quit 64
     inc k
   let t0 = getMonoTime()
   let app = newApp(width, height, proc (): int64 = (getMonoTime() - t0).inMilliseconds)
   if fixture.len > 0: app.loadNotes(parseFile(fixture))
+  app.wallClock = clock
   rawMode()
   addExitProc(proc () = restore())
   stdout.write "\e[?1049h\e[2J\e[?1003h\e[?1006h"

@@ -41,7 +41,7 @@ CAPABILITIES = [
     "input.pointer.drag", "input.wheel", "input.hover",
     "observe.text", "observe.geometry", "observe.style", "observe.image", "observe.focus",
     "sync.event", "sync.visual-settle",
-    "record.cast", "record.video", "record.still",
+    "record.cast", "record.video", "record.still", "record.mask",
 ]
 AFFORDANCES = ["click", "double-click", "context-click", "drag-source", "drop-target",
                "wheel", "text-entry", "focusable"]
@@ -305,7 +305,11 @@ def protocol_schema():
     requests = [
         req("hello", {"protocol": {"const": 1}}, ["protocol"]),
         req("stage", {"use": {"type": "string", "pattern": f"^{NAME}$"},
-                      "with": {"type": "object", "properties": {"$base": {"type": "string"}}}},
+                      "with": {"type": "object", "properties": {
+                          "$base": {"type": "string"},
+                          "$env": {"type": "object", "additionalProperties": {"type": "string"},
+                                   "$comment": "a deterministic run's environment substitutions, "
+                                               "for the application the stage starts"}}}},
             ["use", "with"]),
         req("end-stage", {}),
         req("resolve-chord", {"operation": {"type": "string", "pattern": SYNC}}, ["operation"]),
@@ -326,7 +330,15 @@ def protocol_schema():
         req("record", {"op": {"enum": ["start", "mark", "still", "stop"]},
                        "dir": {"type": "string"}, "path": {"type": "string"},
                        "name": {"type": "string"}, "instance": {"type": "string"},
-                       "step": {"type": "integer"}, "kind": {"type": "string"}},
+                       "step": {"type": "integer"}, "kind": {"type": "string"},
+                       "virtualMs": {"type": "number", "minimum": 0,
+                                     "$comment": "mark: the step's start on the virtual timeline"},
+                       "deterministic": {"type": "boolean",
+                                         "$comment": "start: a documentation capture; media "
+                                                     "carry no wall-clock time"},
+                       "mask": {"type": "array", "items": {"type": "string"},
+                                "$comment": "still: instances whose region the still masks "
+                                            "(declared volatile regions)"}},
             ["op"]),
         req("hit", {"x": {"type": "number"}, "y": {"type": "number"}}, ["x", "y"]),
         req("shutdown", {}),

@@ -160,6 +160,9 @@ proc spawnJsonLinesBackend*(command: string; args: seq[string] = @[]; workDir = 
   result.hit = proc (x, y: float): Option[string] =
     let j = c.call("hit", %*{"x": x, "y": y})
     if j{"locator"}.kind == JString: some(j["locator"].getStr) else: none(string)
+  result.log = proc (): string =
+    if not c.dead: c.drainErr()
+    c.errBuf
   result.close = proc () =
     if not c.dead:
       try: discard c.call("shutdown", nil, 5_000)

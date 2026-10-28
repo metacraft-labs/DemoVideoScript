@@ -28,6 +28,10 @@ STAGE = '''  # the stage, then the stage channel closes
     for call in sc.stage:
       var args = (if call.args == nil: newJObject() else: call.args.toJson)
       args["$base"] = %opts.scenarioDir
+      if opts.environment.len > 0:
+        var env = newJObject()
+        for (k, v) in opts.environment: env[k] = %v
+        args["$env"] = env
       b.stage(call.use, args)
     b.endStage()
   except BackendError as e:

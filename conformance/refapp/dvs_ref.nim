@@ -15,4 +15,6 @@ when isMainModule:
     builtins["refapp-" & $d] = proc (): Backend = newRefappBackend(defect)
   builtins["refapp-no-drag"] = proc (): Backend =
     newRefappBackend(dfNone, @["input.pointer.drag"])
+  builtins["refapp-no-mask"] = proc (): Backend =
+    newRefappBackend(dfNone, @["record.mask"])
   dvsMain(builtins)
