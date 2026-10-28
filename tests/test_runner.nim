@@ -6,6 +6,8 @@
 ## breaks the protocol on purpose; its header says why it is not a mock.
 
 import std/[json, os, osproc, strutils, unittest, streams, sequtils, strtabs]
+import demo_video_script/[scenario, backend, runner, jsonlines]
+from demo_video_script/pack as packmod import parsePackFile
 
 let root = currentSourcePath().parentDir.parentDir
 let bin = getEnv("DVS_BIN_DIR", root / "build/bin")
@@ -67,6 +69,39 @@ suite "the runner on the reference backend":
     for s in t["steps"]:
       if s.hasKey("variant"): variants.add s["variant"].getStr
     check variants == @["input.pointer.drag"]
+
+  test "applicability is known from the hello alone, before anything runs":
+    let (sc, _) = parseScenarioFile(root / "conformance/scenarios/drag-to-reorder.yaml")
+    let (pk, _) = parsePackFile(pack)
+    var hello = Hello(backend: "probe", capabilities: @["input.key", "input.chord",
+      "input.text", "input.pointer.click", "observe.text", "observe.geometry"])
+    let missing = applicability(sc, pk, hello)
+    check missing.len > 0
+    var caps: seq[string]
+    for m in missing: caps.add m.capability
+    check "input.pointer.drag" in caps
+    hello.capabilities.add "input.pointer.drag"
+    hello.capabilities.add "input.pointer.move"
+    check applicability(sc, pk, hello).len == 0
+
+  test "a staged session is driven on, step by step, without staging it again":
+    let (sc, _) = parseScenarioFile(root / "conformance/scenarios/rename-through-dialog.yaml")
+    let (pk, _) = parsePackFile(pack)
+    let b = spawnJsonLinesBackend(refapp)
+    defer: b.close()
+    var first = sc
+    first.steps = sc.steps[0 .. 1]
+    let opts = RunOptions(mode: tmFast, scenarioDir: root / "conformance/scenarios")
+    check runScenario(first, pk, b, opts).outcome == roPassed
+    # the rest, one step at a time, on the same session
+    var staged = opts
+    staged.staged = true
+    for k in 2 ..< sc.steps.len:
+      var one = sc
+      one.steps = @[sc.steps[k]]
+      let r = runScenario(one, pk, b, staged)
+      checkpoint $k & ": " & r.message
+      check r.outcome == roPassed
 
   test "a dwell that the scenario depends on: green in realistic mode, red in fast mode, reported":
     let fast = runJson(root / "tests/runner/dwell-dependent.yaml", "refapp", @["--mode", "fast"])

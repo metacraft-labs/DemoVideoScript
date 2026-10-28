@@ -48,6 +48,10 @@ type
     pinned*: seq[string]        ## locators of the volatile regions a capture masks
     pixelThreshold*: float      ## the SSIM two takes of a pixel capture must reach
     volatileProbeMs*: int       ## the interval between the two takes
+    staged*: bool
+      ## The backend is a live session whose stage has already run and closed
+      ## (a tool driving one session step by step): the scenario's own stage
+      ## is not run and the stage channel is not closed again.
 
   StepResult* = object
     index*: int                 ## 1-based, in execution order
@@ -610,6 +614,16 @@ proc checkStable(r: var Run; args: JsonNode; files: seq[string]) =
         (if rows.len > 0 and rows.len < 20: " (lines " & rows.join(", ") & ")" else: "") &
         "; declare it with --pin")
 
+proc applicability*(sc: Scenario; pack: Pack; hello: Hello): seq[Unsupported] =
+  ## Whether `sc` can run on a backend that answered `hello`, without running
+  ## it (§4.9): the steps, and the capabilities, that exclude it — empty when
+  ## it applies. The same check `runScenario` makes before the stage.
+  var r = Run(sc: sc, pack: pack, hello: hello)
+  for c in hello.capabilities: r.capSet.incl c
+  r.capSet.incl "ext." & hello.backend
+  var plan: seq[ExecStep]
+  r.expand(sc.steps, "", "", 0, plan, result)
+
 proc runScenario*(sc: Scenario; pack: Pack; b: Backend; options: RunOptions): RunResult =
   var r = Run(sc: sc, pack: pack, b: b, opts: options, t0: getMonoTime(),
               startedAt: now().utc.format("yyyy-MM-dd'T'HH:mm:ss'.'fff'Z'"))
@@ -663,17 +677,18 @@ proc runScenario*(sc: Scenario; pack: Pack; b: Backend; options: RunOptions): Ru
     var parts: seq[string]
     for u in missing: parts.add "step " & u.path & " needs " & u.capability
     finish(roUnsupported, "not applicable on backend '" & r.hello.backend & "': " & parts.join("; "))
-  # the stage, then the stage channel closes
+  # the stage, then the stage channel closes (unless a live session's already did)
   try:
-    for call in sc.stage:
-      var args = (if call.args == nil: newJObject() else: call.args.toJson)
-      args["$base"] = %opts.scenarioDir
-      if opts.environment.len > 0:
-        var env = newJObject()
-        for (k, v) in opts.environment: env[k] = %v
-        args["$env"] = env
-      b.stage(call.use, args)
-    b.endStage()
+    if not opts.staged:
+      for call in sc.stage:
+        var args = (if call.args == nil: newJObject() else: call.args.toJson)
+        args["$base"] = %opts.scenarioDir
+        if opts.environment.len > 0:
+          var env = newJObject()
+          for (k, v) in opts.environment: env[k] = %v
+          args["$env"] = env
+        b.stage(call.use, args)
+      b.endStage()
   except BackendError as e:
     finish(roError, "stage: " & e.msg)
   let recording = opts.record != rpOff and opts.runDir != ""
