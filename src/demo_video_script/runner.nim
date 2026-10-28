@@ -89,6 +89,8 @@ type
     path: string
     beat: string
     variant: string
+    callouts: seq[Callout]   ## the callouts that start with this step (its own, or its
+                             ## beat's or flow call's when it is the first inside)
 
   StepFailure = object of CatchableError
 
@@ -206,14 +208,17 @@ proc expand(r: Run; steps: seq[Step]; prefix, beat: string; depth: int;
             into: var seq[ExecStep]; missing: var seq[Unsupported]) =
   for k, s in steps:
     let path = (if prefix == "": $(k + 1) else: prefix & $(k + 1))
+    let first = into.len
     case s.kind
     of stBeat:
       r.expand(s.steps, path & ".", s.name, depth, into, missing)
+      if into.len > first: into[first].callouts = s.callouts & into[first].callouts
     of stFlow:
       if depth > 16: raise newException(ValueError, "flows nested too deeply at step " & path)
       var pd: Diagnostics
       let body = expandFlow(r.pack, s.name, s.args, pd, r.sc.file)
       r.expand(body, path & ">", beat, depth + 1, into, missing)
+      if into.len > first: into[first].callouts = s.callouts & into[first].callouts
     else:
       var needs = stepNeeds(s)
       var lacking: seq[string]
@@ -221,7 +226,7 @@ proc expand(r: Run; steps: seq[Step]; prefix, beat: string; depth: int;
         if c notin r.capSet: lacking.add c
       for c in r.bindingNeeds(s): lacking.add c
       if lacking.len == 0:
-        into.add ExecStep(step: s, path: path, beat: beat)
+        into.add ExecStep(step: s, path: path, beat: beat, callouts: s.callouts)
         continue
       # an alternative may stand in, but only when it is itself admissible
       var used = false
@@ -232,6 +237,7 @@ proc expand(r: Run; steps: seq[Step]; prefix, beat: string; depth: int;
           r.expand(s.alternatives[gap], path & "~", beat, depth, alt, altMissing)
           if altMissing.len == 0 and lacking.len == 1:
             for a in alt.mitems: a.variant = gap
+            if alt.len > 0: alt[0].callouts = s.callouts & alt[0].callouts
             into.add alt
             used = true
           break
@@ -455,7 +461,8 @@ proc sendInput(r: var Run; s: Step; sr: var StepResult): float =
   else: discard
   action["targets"] = targets
   if timing.len > 0 and r.opts.mode == tmRealistic: action["timing"] = timing
-  sr.resolved = resolved
+  # added to, not replaced: the callouts noted when the step started stay
+  for k, v in resolved: sr.resolved[k] = v
   r.b.send(action)
   var pacing = 0.0
   if timing.hasKey("keyDelaysMs"):
@@ -704,6 +711,22 @@ proc runScenario*(sc: Scenario; pack: Pack; b: Backend; options: RunOptions): Ru
         except StepFailure: discard
       try: discard b.record(recMark, mark)
       except BackendError: discard
+      # where each callout starting here points, for composition: a callout is
+      # presentation, so one that does not resolve is recorded, not failed
+      if es.callouts.len > 0:
+        var cs = newJArray()
+        for c in es.callouts:
+          var o = %*{"locator": $c.target.at, "text": c.text}
+          try:
+            let lr = b.locate(locatorJson(c.target.at))
+            o["outcome"] = %($lr.outcome)
+            if lr.outcome == loOne:
+              o["geometry"] = b.read(lr.instance, @["geometry"]){"geometry"}
+          except BackendError as e:
+            o["outcome"] = %"error"
+            o["message"] = %e.msg
+          cs.add o
+        sr.resolved["callouts"] = cs
     var pacing = 0.0
     try:
       case s.kind

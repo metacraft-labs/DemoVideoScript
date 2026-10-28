@@ -214,6 +214,27 @@ suite "recordings":
     check virt > actual + 1000
     check actual < 1000
 
+  test "a recorded run notes where each callout points when it starts":
+    let dir = getTempDir() / "dvs-callouts-" & $getCurrentProcessId()
+    defer: removeDir(dir)
+    let (o, code) = run(["run", root / "conformance/scenarios/presentation-tour.yaml", "--pack",
+                         pack, "--backend", "refapp", "--record", "always", "--out", dir])
+    check code == 0
+    let m = parseFile(dir / "manifest.json")
+    var found: seq[JsonNode]
+    for st in m["steps"]:
+      if st.hasKey("resolved") and st["resolved"].hasKey("callouts"):
+        found.add %*{"path": st["path"], "callouts": st["resolved"]["callouts"]}
+    checkpoint o
+    # the beat's callout starts with the beat's first step
+    check found.len == 1
+    check found[0]["path"].getStr == "2.1"
+    let c = found[0]["callouts"][0]
+    check c["locator"].getStr == "note-list/note[title=\"Recipes\"]"
+    check c["text"].getStr == "This one"
+    check c["outcome"].getStr == "one"
+    check c["geometry"]["w"].getFloat > 0
+
 suite "the JSON-lines transport":
   for mode in ["non-json", "exit", "silent", "wrong-id"]:
     test "a backend that answers '" & mode & "' yields an error naming it":
