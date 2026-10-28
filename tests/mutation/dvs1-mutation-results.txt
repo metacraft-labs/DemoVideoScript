@@ -1,81 +1,81 @@
-# dvs1 mutation results — 2026-10-27 13:25:49 +0200
+# dvs1 mutation results — 2026-10-28 18:29:41 +0200
 # kill command: just test
 
-KILLED   G1       16.9s  a modifier dropped from a parsed chord
-           | nim c --hints:off --styleCheck:usages --styleCheck:error --path:src -d:release --nimcache:$BUILD_DIR/nimcache/dvs -o:/tmp/nix-shell
+KILLED   G1       99.2s  a modifier dropped from a parsed chord
+           | cp conformance/app/web/index.html $BUILD_DIR/web/index.html
            | Error: execution of an external program failed: '$BUILD_DIR/test-bin/test_grammar'
-           | error: Recipe `test-unit` failed on line 29 with exit code 1
-KILLED   G2       14.3s  Mod resolved to the wrong platform key
-           | nim c --hints:off --styleCheck:usages --styleCheck:error --path:src -d:release --nimcache:$BUILD_DIR/nimcache/dvs -o:/tmp/nix-shell
+           | error: Recipe `test-unit` failed on line 48 with exit code 1
+KILLED   G2       36.3s  Mod resolved to the wrong platform key
+           | cp conformance/app/web/index.html $BUILD_DIR/web/index.html
            | Error: execution of an external program failed: '$BUILD_DIR/test-bin/test_grammar'
-           | error: Recipe `test-unit` failed on line 29 with exit code 1
-KILLED   G3       14.2s  a locator key parsed as an ordinal
-           | nim c --hints:off --styleCheck:usages --styleCheck:error --path:src -d:release --nimcache:$BUILD_DIR/nimcache/dvs -o:/tmp/nix-shell
+           | error: Recipe `test-unit` failed on line 48 with exit code 1
+KILLED   G3       48.0s  a locator key parsed as an ordinal
+           | cp conformance/app/web/index.html $BUILD_DIR/web/index.html
            | Error: execution of an external program failed: '$BUILD_DIR/test-bin/test_grammar'
-           | error: Recipe `test-unit` failed on line 29 with exit code 1
-KILLED   S1       56.7s  the version check removed
-           | DVS_BIN=$BUILD_DIR/bin/dvs nim c -r --hints:off --styleCheck:usages --styleCheck:error --path:src --nimcache:/tmp/nix-shell.RDWvKz/
+           | error: Recipe `test-unit` failed on line 48 with exit code 1
+KILLED   S1      114.9s  the version check removed
+           | DVS_BIN=$BUILD_DIR/bin/dvs nim c -r --hints:off --styleCheck:usages --styleCheck:error --path:src --nimcache:$BUILD_DIR/nimcache/test_cli -o:$BUILD_DIR/test-bin
            | Error: execution of an external program failed: '$BUILD_DIR/test-bin/test_cli'
-           | error: Recipe `test-cli` failed on line 34 with exit code 1
-KILLED   S2       37.7s  L1: an unknown step key accepted
-           | DVS_BIN=$BUILD_DIR/bin/dvs nim c -r --hints:off --styleCheck:usages --styleCheck:error --path:src --nimcache:/tmp/nix-shell.RDWvKz/
+           | error: Recipe `test-cli` failed on line 53 with exit code 1
+KILLED   S2       78.1s  L1: an unknown step key accepted
+           | DVS_BIN=$BUILD_DIR/bin/dvs nim c -r --hints:off --styleCheck:usages --styleCheck:error --path:src --nimcache:$BUILD_DIR/nimcache/test_cli -o:$BUILD_DIR/test-bin
            | Error: execution of an external program failed: '$BUILD_DIR/test-bin/test_cli'
-           | error: Recipe `test-cli` failed on line 34 with exit code 1
-KILLED   S3       53.9s  L1: a stage call in steps no longer named as one
-           | DVS_BIN=$BUILD_DIR/bin/dvs nim c -r --hints:off --styleCheck:usages --styleCheck:error --path:src --nimcache:/tmp/nix-shell.RDWvKz/
+           | error: Recipe `test-cli` failed on line 53 with exit code 1
+KILLED   S3       80.8s  L1: a stage call in steps no longer named as one
+           | DVS_BIN=$BUILD_DIR/bin/dvs nim c -r --hints:off --styleCheck:usages --styleCheck:error --path:src --nimcache:$BUILD_DIR/nimcache/test_cli -o:$BUILD_DIR/test-bin
            | Error: execution of an external program failed: '$BUILD_DIR/test-bin/test_cli'
-           | error: Recipe `test-cli` failed on line 34 with exit code 1
-KILLED   L2       37.2s  L2: a locator key that is not a declared key accepted
-           | DVS_BIN=$BUILD_DIR/bin/dvs nim c -r --hints:off --styleCheck:usages --styleCheck:error --path:src --nimcache:/tmp/nix-shell.RDWvKz/
+           | error: Recipe `test-cli` failed on line 53 with exit code 1
+KILLED   L2       63.5s  L2: a locator key that is not a declared key accepted
+           | DVS_BIN=$BUILD_DIR/bin/dvs nim c -r --hints:off --styleCheck:usages --styleCheck:error --path:src --nimcache:$BUILD_DIR/nimcache/test_cli -o:$BUILD_DIR/test-bin
            | Error: execution of an external program failed: '$BUILD_DIR/test-bin/test_cli'
-           | error: Recipe `test-cli` failed on line 34 with exit code 1
-KILLED   L2p      18.3s  L2: an undeclared property observed
-           | DVS_BIN=$BUILD_DIR/bin/dvs nim c -r --hints:off --styleCheck:usages --styleCheck:error --path:src --nimcache:/tmp/nix-shell.RDWvKz/
+           | error: Recipe `test-cli` failed on line 53 with exit code 1
+KILLED   L2p      56.6s  L2: an undeclared property observed
+           | DVS_BIN=$BUILD_DIR/bin/dvs nim c -r --hints:off --styleCheck:usages --styleCheck:error --path:src --nimcache:$BUILD_DIR/nimcache/test_cli -o:$BUILD_DIR/test-bin
            | Error: execution of an external program failed: '$BUILD_DIR/test-bin/test_cli'
-           | error: Recipe `test-cli` failed on line 34 with exit code 1
-KILLED   L3       20.9s  L3: the affordance check removed
-           | DVS_BIN=$BUILD_DIR/bin/dvs nim c -r --hints:off --styleCheck:usages --styleCheck:error --path:src --nimcache:/tmp/nix-shell.RDWvKz/
+           | error: Recipe `test-cli` failed on line 53 with exit code 1
+KILLED   L3       53.3s  L3: the affordance check removed
+           | DVS_BIN=$BUILD_DIR/bin/dvs nim c -r --hints:off --styleCheck:usages --styleCheck:error --path:src --nimcache:$BUILD_DIR/nimcache/test_cli -o:$BUILD_DIR/test-bin
            | Error: execution of an external program failed: '$BUILD_DIR/test-bin/test_cli'
-           | error: Recipe `test-cli` failed on line 34 with exit code 1
-KILLED   L4       17.8s  L4: an ordinal accepted without a warning
-           | DVS_BIN=$BUILD_DIR/bin/dvs nim c -r --hints:off --styleCheck:usages --styleCheck:error --path:src --nimcache:/tmp/nix-shell.RDWvKz/
+           | error: Recipe `test-cli` failed on line 53 with exit code 1
+KILLED   L4       41.1s  L4: an ordinal accepted without a warning
+           | DVS_BIN=$BUILD_DIR/bin/dvs nim c -r --hints:off --styleCheck:usages --styleCheck:error --path:src --nimcache:$BUILD_DIR/nimcache/test_cli -o:$BUILD_DIR/test-bin
            | Error: execution of an external program failed: '$BUILD_DIR/test-bin/test_cli'
-           | error: Recipe `test-cli` failed on line 34 with exit code 1
-KILLED   L5       17.9s  L5: the settle condition inverted
-           | DVS_BIN=$BUILD_DIR/bin/dvs nim c -r --hints:off --styleCheck:usages --styleCheck:error --path:src --nimcache:/tmp/nix-shell.RDWvKz/
+           | error: Recipe `test-cli` failed on line 53 with exit code 1
+KILLED   L5       46.9s  L5: the settle condition inverted
+           | DVS_BIN=$BUILD_DIR/bin/dvs nim c -r --hints:off --styleCheck:usages --styleCheck:error --path:src --nimcache:$BUILD_DIR/nimcache/test_cli -o:$BUILD_DIR/test-bin
            | Error: execution of an external program failed: '$BUILD_DIR/test-bin/test_cli'
-           | error: Recipe `test-cli` failed on line 34 with exit code 1
-KILLED   L6       15.1s  L6: a dwell before an observation not warned
-           | DVS_BIN=$BUILD_DIR/bin/dvs nim c -r --hints:off --styleCheck:usages --styleCheck:error --path:src --nimcache:/tmp/nix-shell.RDWvKz/
+           | error: Recipe `test-cli` failed on line 53 with exit code 1
+KILLED   L6       56.7s  L6: a dwell before an observation not warned
+           | DVS_BIN=$BUILD_DIR/bin/dvs nim c -r --hints:off --styleCheck:usages --styleCheck:error --path:src --nimcache:$BUILD_DIR/nimcache/test_cli -o:$BUILD_DIR/test-bin
            | Error: execution of an external program failed: '$BUILD_DIR/test-bin/test_cli'
-           | error: Recipe `test-cli` failed on line 34 with exit code 1
-KILLED   L7       23.4s  L7: an undeclared sync condition accepted
-           | DVS_BIN=$BUILD_DIR/bin/dvs nim c -r --hints:off --styleCheck:usages --styleCheck:error --path:src --nimcache:/tmp/nix-shell.RDWvKz/
+           | error: Recipe `test-cli` failed on line 53 with exit code 1
+KILLED   L7       57.6s  L7: an undeclared sync condition accepted
+           | DVS_BIN=$BUILD_DIR/bin/dvs nim c -r --hints:off --styleCheck:usages --styleCheck:error --path:src --nimcache:$BUILD_DIR/nimcache/test_cli -o:$BUILD_DIR/test-bin
            | Error: execution of an external program failed: '$BUILD_DIR/test-bin/test_cli'
-           | error: Recipe `test-cli` failed on line 34 with exit code 1
-KILLED   L8       48.3s  L8: an extension step without its backend accepted
-           | DVS_BIN=$BUILD_DIR/bin/dvs nim c -r --hints:off --styleCheck:usages --styleCheck:error --path:src --nimcache:/tmp/nix-shell.RDWvKz/
+           | error: Recipe `test-cli` failed on line 53 with exit code 1
+KILLED   L8       51.3s  L8: an extension step without its backend accepted
+           | DVS_BIN=$BUILD_DIR/bin/dvs nim c -r --hints:off --styleCheck:usages --styleCheck:error --path:src --nimcache:$BUILD_DIR/nimcache/test_cli -o:$BUILD_DIR/test-bin
            | Error: execution of an external program failed: '$BUILD_DIR/test-bin/test_cli'
-           | error: Recipe `test-cli` failed on line 34 with exit code 1
-KILLED   L9       21.2s  L9: a dangling narration anchor accepted
-           | DVS_BIN=$BUILD_DIR/bin/dvs nim c -r --hints:off --styleCheck:usages --styleCheck:error --path:src --nimcache:/tmp/nix-shell.RDWvKz/
+           | error: Recipe `test-cli` failed on line 53 with exit code 1
+KILLED   L9       54.3s  L9: a dangling narration anchor accepted
+           | DVS_BIN=$BUILD_DIR/bin/dvs nim c -r --hints:off --styleCheck:usages --styleCheck:error --path:src --nimcache:$BUILD_DIR/nimcache/test_cli -o:$BUILD_DIR/test-bin
            | Error: execution of an external program failed: '$BUILD_DIR/test-bin/test_cli'
-           | error: Recipe `test-cli` failed on line 34 with exit code 1
-KILLED   L10      16.9s  L10: a role named like a keyword accepted
-           | DVS_BIN=$BUILD_DIR/bin/dvs nim c -r --hints:off --styleCheck:usages --styleCheck:error --path:src --nimcache:/tmp/nix-shell.RDWvKz/
+           | error: Recipe `test-cli` failed on line 53 with exit code 1
+KILLED   L10      50.1s  L10: a role named like a keyword accepted
+           | DVS_BIN=$BUILD_DIR/bin/dvs nim c -r --hints:off --styleCheck:usages --styleCheck:error --path:src --nimcache:$BUILD_DIR/nimcache/test_cli -o:$BUILD_DIR/test-bin
            | Error: execution of an external program failed: '$BUILD_DIR/test-bin/test_cli'
-           | error: Recipe `test-cli` failed on line 34 with exit code 1
-KILLED   L11      11.9s  L11: a flow violating L1 accepted
-           | DVS_BIN=$BUILD_DIR/bin/dvs nim c -r --hints:off --styleCheck:usages --styleCheck:error --path:src --nimcache:/tmp/nix-shell.RDWvKz/
+           | error: Recipe `test-cli` failed on line 53 with exit code 1
+KILLED   L11      41.9s  L11: a flow violating L1 accepted
+           | DVS_BIN=$BUILD_DIR/bin/dvs nim c -r --hints:off --styleCheck:usages --styleCheck:error --path:src --nimcache:$BUILD_DIR/nimcache/test_cli -o:$BUILD_DIR/test-bin
            | Error: execution of an external program failed: '$BUILD_DIR/test-bin/test_cli'
-           | error: Recipe `test-cli` failed on line 34 with exit code 1
-KILLED   L12      15.3s  L12: duplicate capture names accepted
-           | DVS_BIN=$BUILD_DIR/bin/dvs nim c -r --hints:off --styleCheck:usages --styleCheck:error --path:src --nimcache:/tmp/nix-shell.RDWvKz/
+           | error: Recipe `test-cli` failed on line 53 with exit code 1
+KILLED   L12      45.1s  L12: duplicate capture names accepted
+           | DVS_BIN=$BUILD_DIR/bin/dvs nim c -r --hints:off --styleCheck:usages --styleCheck:error --path:src --nimcache:$BUILD_DIR/nimcache/test_cli -o:$BUILD_DIR/test-bin
            | Error: execution of an external program failed: '$BUILD_DIR/test-bin/test_cli'
-           | error: Recipe `test-cli` failed on line 34 with exit code 1
-KILLED   SC1      24.3s  the published schema's steps relaxed to accept unknown keys
-           | DVS_BIN=$BUILD_DIR/bin/dvs nim c -r --hints:off --styleCheck:usages --styleCheck:error --path:src --nimcache:/tmp/nix-shell.RDWvKz/
+           | error: Recipe `test-cli` failed on line 53 with exit code 1
+KILLED   SC1      37.4s  the published schema's steps relaxed to accept unknown keys
+           | DVS_BIN=$BUILD_DIR/bin/dvs nim c -r --hints:off --styleCheck:usages --styleCheck:error --path:src --nimcache:$BUILD_DIR/nimcache/test_cli -o:$BUILD_DIR/test-bin
            | python3 tests/schema_agreement.py $BUILD_DIR/bin/dvs
-           | error: Recipe `test-schema-agreement` failed on line 37 with exit code 1
+           | error: Recipe `test-schema-agreement` failed on line 78 with exit code 1
 
 19/19 killed, 0 survived
