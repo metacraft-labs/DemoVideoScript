@@ -307,6 +307,10 @@ def protocol_schema():
         req("stage", {"use": {"type": "string", "pattern": f"^{NAME}$"},
                       "with": {"type": "object", "properties": {
                           "$base": {"type": "string"},
+                          "$timeoutMs": {"type": "integer", "minimum": 1,
+                                         "$comment": "how long this stage call may take (the run's "
+                                                     "stage-timeout, default 120000); a binding may "
+                                                     "use it as the limit of what the stage waits for"},
                           "$env": {"type": "object", "additionalProperties": {"type": "string"},
                                    "$comment": "a deterministic run's environment substitutions, "
                                                "for the application the stage starts"}}}},

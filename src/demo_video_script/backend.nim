@@ -12,7 +12,12 @@
 
 import std/[json, options]
 
-const ProtocolVersion* = 1
+const
+  ProtocolVersion* = 1
+  DefaultStageTimeoutMs* = 120_000
+    ## How long one stage call may take unless the run says otherwise (a
+    ## lane's `stage-timeout:`, `dvs run --stage-timeout`). The runner passes
+    ## the limit to the stage as `$timeoutMs`.
 
 type
   BackendErrorKind* = enum

@@ -33,6 +33,10 @@ type
     runDir*: string             ## where the manifest and stills go; "" = nowhere
     timeoutMs*: int             ## default wait timeout
     settleTimeoutMs*: int
+    stageTimeoutMs*: int
+      ## How long one stage call may take (default 120 s), passed to the stage
+      ## as `$timeoutMs`; an out-of-process backend that has not answered by
+      ## then fails the stage.
     probeReads*: bool           ## read every property twice and compare (§4.4.1, §12)
     scenarioDir*: string        ## base for the stage's relative paths
     runId*: string              ## the run directory's name, recorded in the manifest
@@ -632,6 +636,7 @@ proc runScenario*(sc: Scenario; pack: Pack; b: Backend; options: RunOptions): Ru
   if r.opts.volatileProbeMs <= 0: r.opts.volatileProbeMs = 1200
   if r.opts.timeoutMs <= 0: r.opts.timeoutMs = 5000
   if r.opts.settleTimeoutMs <= 0: r.opts.settleTimeoutMs = 5000
+  if r.opts.stageTimeoutMs <= 0: r.opts.stageTimeoutMs = DefaultStageTimeoutMs
   let opts = r.opts
   r.res = RunResult(scenario: sc.name, mode: r.opts.mode, seed: opts.seed, runDir: opts.runDir)
   template finish(oc: RunOutcome; msg: string) =
@@ -683,6 +688,7 @@ proc runScenario*(sc: Scenario; pack: Pack; b: Backend; options: RunOptions): Ru
       for call in sc.stage:
         var args = (if call.args == nil: newJObject() else: call.args.toJson)
         args["$base"] = %opts.scenarioDir
+        args["$timeoutMs"] = %opts.stageTimeoutMs
         if opts.environment.len > 0:
           var env = newJObject()
           for (k, v) in opts.environment: env[k] = %v

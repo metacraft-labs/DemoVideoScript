@@ -2,9 +2,9 @@
 """DVS-7 verification gate: test-run recordings and documentation captures.
 
 Each arm is a defect in where a recording goes, which runs are kept, what a
-deterministic capture checks, how a citation resolves, or how a lane judges
-its runs; the kill command builds the binaries and runs the recordings suite
-(real runs of the reference backend, in process and over JSON lines).
+deterministic capture checks, how a citation resolves, how a lane judges its
+runs, or a stage call's time limit; the kill command builds the binaries and
+runs the recordings suite (real runs of the reference backend, in process and over JSON lines).
 """
 import sys
 from pathlib import Path
@@ -16,6 +16,7 @@ ROOT = Path(__file__).resolve().parents[2]
 REC = "src/demo_video_script/recordings.nim"
 CLI = "src/demo_video_script/cli.nim"
 R = "src/demo_video_script/runner.nim"
+J = "src/demo_video_script/jsonlines.nim"
 
 ARMS = [
     Arm("C1", REC, "    if k < policy.runs: continue", "    if k < policy.runs - 1: continue",
@@ -41,6 +42,13 @@ ARMS = [
     Arm("C10", R, '        writeFile(opts.runDir / "failure" / "backend.log",',
         '        if false: writeFile(opts.runDir / "failure" / "backend.log",',
         "a failure bundle without the backend's log"),
+    Arm("C11", J, '    let limit = (if args != nil and args{"$timeoutMs"}.getInt(0) > 0: args["$timeoutMs"].getInt',
+        "    let limit = (if false: 0", "a stage call's limit ignored"),
+    Arm("C12", R, '        args["$timeoutMs"] = %opts.stageTimeoutMs\n', "",
+        "the stage not given its time limit"),
+    Arm("C13", CLI, "                                                  stageTimeoutMs: stageTimeoutMs))",
+        "                                                  stageTimeoutMs: 0))",
+        "a lane's stage-timeout ignored"),
 ]
 
 if __name__ == "__main__":

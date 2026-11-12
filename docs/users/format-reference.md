@@ -217,6 +217,10 @@ Stages are declared by signature only: their code is your project's, written in 
 backend's language, and runs before the first step. After the stage ends, nothing can
 call it.
 
+A stage call may take 120 s; a lane raises the limit with `stage-timeout:` (ms) and
+`dvs run` with `--stage-timeout MS`. The stage receives the limit as `$timeoutMs`, so a
+binding can bound what it waits for by the same number.
+
 ### The predicate language
 
 Named assertions and sync conditions are predicates over a role instance (its

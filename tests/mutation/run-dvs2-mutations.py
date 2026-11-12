@@ -23,25 +23,27 @@ CHECK = '''  if missing.len > 0:
     for u in missing: parts.add "step " & u.path & " needs " & u.capability
     finish(roUnsupported, "not applicable on backend '" & r.hello.backend & "': " & parts.join("; "))
 '''
-STAGE = '''  # the stage, then the stage channel closes
+STAGE = '''  # the stage, then the stage channel closes (unless a live session's already did)
   try:
-    for call in sc.stage:
-      var args = (if call.args == nil: newJObject() else: call.args.toJson)
-      args["$base"] = %opts.scenarioDir
-      if opts.environment.len > 0:
-        var env = newJObject()
-        for (k, v) in opts.environment: env[k] = %v
-        args["$env"] = env
-      b.stage(call.use, args)
-    b.endStage()
+    if not opts.staged:
+      for call in sc.stage:
+        var args = (if call.args == nil: newJObject() else: call.args.toJson)
+        args["$base"] = %opts.scenarioDir
+        args["$timeoutMs"] = %opts.stageTimeoutMs
+        if opts.environment.len > 0:
+          var env = newJObject()
+          for (k, v) in opts.environment: env[k] = %v
+          args["$env"] = env
+        b.stage(call.use, args)
+      b.endStage()
   except BackendError as e:
     finish(roError, "stage: " & e.msg)
 '''
 
 ARMS = [
     Arm("R1", R, CHECK + STAGE, STAGE + CHECK, "the capability check moved after the stage"),
-    Arm("R2", R, "      b.stage(call.use, args)\n    b.endStage()",
-        "      b.stage(call.use, args)\n    discard", "the stage channel left open"),
+    Arm("R2", R, "        b.stage(call.use, args)\n      b.endStage()",
+        "        b.stage(call.use, args)\n      discard", "the stage channel left open"),
     Arm("R3", R, "  if not s.settle: return\n", "  return\n", "the implicit settled removed"),
     Arm("R4", R, "      if not evalMatcher(m, vals[p]):", "      if evalMatcher(m, vals[p]):",
         "a matcher's verdict inverted"),

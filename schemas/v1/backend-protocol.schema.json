@@ -433,6 +433,11 @@
                 "$base": {
                   "type": "string"
                 },
+                "$timeoutMs": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "$comment": "how long this stage call may take (the run's stage-timeout, default 120000); a binding may use it as the limit of what the stage waits for"
+                },
                 "$env": {
                   "type": "object",
                   "additionalProperties": {

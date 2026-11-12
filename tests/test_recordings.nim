@@ -177,6 +177,49 @@ suite "the settle timeout":
     check code == 1
     check "did not settle within 700 ms" in o
 
+suite "the stage timeout":
+  # The one stand-in: tests/support/broken_backend.nim `slow-stage`, a real
+  # process on the real protocol whose stage takes 1.5 s and then works, so
+  # the run's stage limit decides whether the stage fails.
+  let broken = bin / "broken-backend"
+  let scenario = root / "tests/runner/broken-backend.yaml"
+
+  test "--stage-timeout is how long a stage call may take":
+    let build = scratch("stage1")
+    defer: removeDir(build)
+    let (o, code) = run(["run", scenario, "--pack", pack, "--backend", "cmd:" & broken & " slow-stage",
+                         "--build", build, "--stage-timeout", "600"])
+    checkpoint o
+    check code == 2
+    check "stage: backend 'broken-backend' did not answer within 600 ms" in o
+    check "stage-timeout" in o
+    # a limit the stage fits in: it runs, and the limit reached it as $timeoutMs
+    let (o2, code2) = run(["run", scenario, "--pack", pack, "--backend", "cmd:" & broken & " slow-stage",
+                           "--build", build, "--stage-timeout", "10000"])
+    checkpoint o2
+    check code2 == 0
+
+  test "a lane's stage-timeout reaches its runs":
+    let build = scratch("stage2")
+    defer: removeDir(build)
+    let lane = build / "stage.lane.yaml"
+    writeFile(lane, "lane: 1\nname: stage\npack: " & pack & "\nbackend: \"cmd:" & broken &
+              " slow-stage\"\nstage-timeout: 700\napplicable:\n  - " & scenario & "\n")
+    let (o, code) = run(["lane", lane, "--build", build])
+    checkpoint o
+    check code == 1
+    check "did not answer within 700 ms" in o
+
+  test "without a limit, a stage call may take 120 s":
+    let build = scratch("stage3")
+    defer: removeDir(build)
+    let transcript = build / "transcript.txt"
+    let (o, code) = run(["run", scenario, "--pack", pack, "--backend", "cmd:" & broken & " slow-stage",
+                         "--build", build], [("DVS_PROTOCOL_TRANSCRIPT", transcript)])
+    checkpoint o
+    check code == 0
+    check "\"$timeoutMs\":120000" in readFile(transcript)
+
 suite "documentation captures":
   test "a capture run with a live clock on screen fails unless the clock is declared":
     let build = scratch("volatile")

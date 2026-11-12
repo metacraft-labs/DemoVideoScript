@@ -6,12 +6,17 @@
 ## way, so that the runner's handling of a broken backend is exercised over a
 ## real pipe.
 ##
-##   broken_backend non-json|exit|silent|wrong-id|unsettled
+##   broken_backend non-json|exit|silent|wrong-id|unsettled|slow-stage
 ##
 ## `unsettled` is a backend whose application never settles: it locates the
 ## one target a step names and takes the input, and then answers every
 ## `settled` with "not met" — the runner's settle timeout is what ends the
 ## step.
+##
+## `slow-stage` is a backend whose stage takes 1.5 s, as one that records a
+## program or launches an editor takes long; after it, it works. Its stage
+## refuses a call without the run's time limit (`$timeoutMs`), so a run that
+## passes shows the limit arrived.
 
 import std/[json, os]
 
@@ -24,10 +29,19 @@ while stdin.readLine(line):
   of "hello":
     echo $(%*{"id": id, "ok": true, "backend": "broken", "version": "1", "platform": "linux",
               "capabilities": ["input.key", "input.pointer.click", "observe.text"], "units": "cell"})
-  of "stage", "end-stage":
+  of "stage":
+    if mode == "slow-stage":
+      if req{"with"}{"$timeoutMs"}.getInt(0) <= 0:
+        echo $(%*{"id": id, "ok": false,
+                  "error": {"kind": "stage", "message": "the stage call carries no $timeoutMs"}})
+        stdout.flushFile()
+        continue
+      sleep(1500)
+    echo $(%*{"id": id, "ok": true})
+  of "end-stage":
     echo $(%*{"id": id, "ok": true})
   of "locate":
-    if mode == "unsettled":
+    if mode in ["unsettled", "slow-stage"]:
       echo $(%*{"id": id, "ok": true, "outcome": "one", "instance": "0", "role": "search-field"})
       stdout.flushFile()
       continue

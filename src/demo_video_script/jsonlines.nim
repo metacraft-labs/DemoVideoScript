@@ -53,7 +53,7 @@ proc drainErr(c: Conn) =
     c.errBuf.add chunk
     if c.errBuf.len > 1_000_000: c.errBuf = c.errBuf[^500_000 .. ^1]
 
-proc readLine(c: Conn; timeoutMs: int): string =
+proc readLine(c: Conn; timeoutMs: int; limitHint = ""): string =
   let deadline = getMonoTime() + initDuration(milliseconds = timeoutMs)
   let outFd = c.p.outputHandle.cint
   let errFd = c.p.errorHandle.cint
@@ -65,7 +65,7 @@ proc readLine(c: Conn; timeoutMs: int): string =
       return
     let left = int((deadline - getMonoTime()).inMilliseconds)
     if left <= 0:
-      raise c.crashed("did not answer within " & $timeoutMs & " ms")
+      raise c.crashed("did not answer within " & $timeoutMs & " ms" & limitHint)
     var fds = [TPollfd(fd: outFd, events: POLLIN), TPollfd(fd: errFd, events: POLLIN)]
     let r = poll(addr fds[0], 2, min(left, 200).cint)
     if r < 0:
@@ -89,7 +89,7 @@ proc readLine(c: Conn; timeoutMs: int): string =
       chunk.setLen(n)
       c.buf.add chunk
 
-proc call(c: Conn; name: string; args: JsonNode; timeoutMs = -1): JsonNode =
+proc call(c: Conn; name: string; args: JsonNode; timeoutMs = -1; limitHint = ""): JsonNode =
   if c.dead: raise c.crashed("is no longer running")
   let timeoutMs = (if timeoutMs < 0: defaultCallTimeoutMs() else: min(timeoutMs, max(defaultCallTimeoutMs(), timeoutMs)))
   inc c.nextId
@@ -106,7 +106,7 @@ proc call(c: Conn; name: string; args: JsonNode; timeoutMs = -1): JsonNode =
   except IOError, OSError:
     c.dead = true
     raise c.crashed("closed its input")
-  let resp = c.readLine(timeoutMs)
+  let resp = c.readLine(timeoutMs, limitHint)
   if c.hasTranscript:
     c.transcript.writeLine("< " & resp)
     c.transcript.flushFile()
@@ -139,7 +139,12 @@ proc spawnJsonLinesBackend*(command: string; args: seq[string] = @[]; workDir = 
   result.hello = proc (): Hello =
     helloFromJson(c.call("hello", %*{"protocol": ProtocolVersion}))
   result.stage = proc (use: string; args: JsonNode) =
-    discard c.call("stage", %*{"use": use, "with": args}, 120_000)
+    # the run's limit for a stage call, which the runner passes as `$timeoutMs`
+    let limit = (if args != nil and args{"$timeoutMs"}.getInt(0) > 0: args["$timeoutMs"].getInt
+                 else: DefaultStageTimeoutMs)
+    discard c.call("stage", %*{"use": use, "with": args}, limit,
+                   " (the stage's time limit; a lane raises it with `stage-timeout:`, " &
+                   "`dvs run` with --stage-timeout)")
   result.endStage = proc () = discard c.call("end-stage", nil)
   result.resolveChord = proc (operation: string): Option[string] =
     let j = c.call("resolve-chord", %*{"operation": operation})
