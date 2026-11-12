@@ -7,7 +7,7 @@
 ## delegated by name to the backend, pacing and dwell enacted in realistic runs,
 ## per-step results and the recording manifest written as the run goes.
 
-import std/[json, os, osproc, times, monotimes, tables, strutils, options, sets, math]
+import std/[json, os, osproc, times, monotimes, tables, strutils, options, sets, math, sequtils]
 import ./model, ./yaml, ./scenario, ./lint, ./backend, ./eval, ./pacing, ./emit, ./predicates,
   ./grammar
 
@@ -116,6 +116,7 @@ type
     capSet: HashSet[string]
     startedAt: string
     recordingStartMs: float
+    captureFiles: seq[string]   ## what the capture steps wrote: kept whatever the policy
 
 proc ms(r: Run): float = float((getMonoTime() - r.t0).inNanoseconds) / 1e6
 
@@ -560,6 +561,27 @@ proc manifestJson*(res: RunResult; r: Run): JsonNode =
      "timingDependent": res.timingDependent,
      "steps": steps, "unsupported": uns, "diagnostics": diags, "media": res.media}
 
+proc keepOnlyCaptures(r: var Run) =
+  ## A passing run under `on-failure` keeps no recording, but a capture is
+  ## the scenario's own output (§9.2), not part of the recording: the run
+  ## directory keeps the capture steps' files and nothing else, and the
+  ## manifest names only those.
+  var keep: HashSet[string]
+  for f in r.captureFiles: keep.incl f.absolutePath.normalizedPath
+  for f in walkDirRec(r.opts.runDir):
+    if f.absolutePath.normalizedPath notin keep: removeFile(f)
+  var dirs: seq[string]
+  for d in walkDirRec(r.opts.runDir, yieldFilter = {pcDir}): dirs.add d
+  for i in countdown(dirs.high, 0):
+    var empty = true
+    for _ in walkDir(dirs[i]):
+      empty = false
+      break
+    if empty: removeDir(dirs[i])
+  for s in r.res.steps.mitems:
+    s.artifacts = s.artifacts.filterIt(it.absolutePath.normalizedPath in keep)
+  r.res.media = @[]
+
 # --- documentation captures (§9.2) --------------------------------------------------------
 
 proc pinnedInstances(r: var Run): JsonNode =
@@ -645,6 +667,9 @@ proc runScenario*(sc: Scenario; pack: Pack; b: Backend; options: RunOptions): Ru
     r.res.durationMs = r.ms
     if opts.runDir != "" and (opts.record == rpAlways or
         (opts.record == rpOnFailure and oc in {roFailed, roError})):
+      writeJson(opts.runDir / "manifest.json", manifestJson(r.res, r))
+    elif opts.runDir != "" and dirExists(opts.runDir) and r.captureFiles.len > 0:
+      r.keepOnlyCaptures()
       writeJson(opts.runDir / "manifest.json", manifestJson(r.res, r))
     elif opts.runDir != "" and dirExists(opts.runDir) and opts.record == rpOnFailure:
       removeDir(opts.runDir)
@@ -776,6 +801,7 @@ proc runScenario*(sc: Scenario; pack: Pack; b: Backend; options: RunOptions): Ru
           args["dir"] = %opts.runDir
           let res = b.record(recStill, args)
           for f in res{"files"}.getElems: sr.artifacts.add f.getStr
+          r.captureFiles.add sr.artifacts
           if opts.deterministic: r.checkStable(args, sr.artifacts)
       of stExt:
         b.send(%*{"ext": s.name, "with": (if s.args == nil: newJObject() else: s.args.toJson)})

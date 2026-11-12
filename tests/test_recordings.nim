@@ -69,14 +69,25 @@ suite "test-run recordings":
   test "a passing run leaves no recording unless asked":
     let build = scratch("pass")
     defer: removeDir(build)
+    # archive-from-keyboard has a capture step: its run keeps the capture and
+    # a manifest naming it, and none of the recording
     let f = root / "conformance/scenarios/archive-from-keyboard.yaml"
     check run(["run", f, "--pack", pack, "--backend", "refapp"], [("BUILD_DIR", build)]).code == 0
-    check runDirs(build, "notes-archive-from-keyboard", "refapp").len == 0
+    var dirs = runDirs(build, "notes-archive-from-keyboard", "refapp")
+    check dirs.len == 1
+    var files: seq[string]
+    for p in walkDirRec(dirs[0], relative = true): files.add p
+    checkpoint $files
+    check "manifest.json" in files
+    check files.anyIt(it.startsWith("steps/"))
+    check files.allIt(it == "manifest.json" or
+                      (it.startsWith("steps/") and not it.endsWith("-state.json")))
     check run(["run", f, "--pack", pack, "--backend", "refapp", "--record", "always"],
               [("BUILD_DIR", build)]).code == 0
-    let dirs = runDirs(build, "notes-archive-from-keyboard", "refapp")
-    check dirs.len == 1
-    check parseJson(readFile(dirs[0] / "manifest.json"))["outcome"].getStr == "passed"
+    dirs = runDirs(build, "notes-archive-from-keyboard", "refapp")
+    check dirs.len == 2
+    check parseJson(readFile(dirs[1] / "manifest.json"))["outcome"].getStr == "passed"
+    check fileExists(dirs[1] / "steps/1-state.json")
 
   test "a recording is never written to the home directory or a shared state directory":
     let home = scratch("home")
@@ -284,6 +295,34 @@ suite "documentation captures":
                          "refapp", "--record", "always", "--deterministic"], [("BUILD_DIR", build)])
     checkpoint o
     check code == 0
+
+  test "a passing run keeps its captures without --record always, and only them":
+    let build = scratch("keepcap")
+    defer: removeDir(build)
+    let (o, code) = run(["run", here / "clock-capture.yaml", "--pack", pack, "--backend", "refapp",
+                         "--build", build])
+    checkpoint o
+    check code == 0
+    let (p, c) = run(["capture-path", "scenario=recordings/clock-capture", "capture=last-selected",
+                      "--build", build])
+    checkpoint p
+    check c == 0
+    let path = p.strip.splitLines[0]
+    check path.extractFilename.startsWith("6-last-selected.")
+    check fileExists(path)
+    let dir = path.parentDir.parentDir
+    var kept: seq[string]
+    for f in walkDirRec(dir, relative = true): kept.add f
+    kept.sort()
+    checkpoint $kept
+    # the two captures and the manifest; no per-step stills, states or media
+    check kept.len >= 3
+    check kept.allIt(it == "manifest.json" or it.startsWith("steps/3-first-selected.") or
+                     it.startsWith("steps/6-last-selected."))
+    let m = parseJson(readFile(dir / "manifest.json"))
+    check m["outcome"].getStr == "passed"
+    check m["media"].getElems.len == 0
+    check m["steps"][0].getOrDefault("artifacts").getElems.len == 0
 
   test "a citation resolves to the capture the named step produced":
     let build = scratch("cite")

@@ -17,7 +17,9 @@ Every run can leave a recording: a directory with a manifest and the media.
 ```
 
 `--record on-failure` (the default) keeps a failed run's directory and deletes a
-passing one's; `--record always` keeps both; `--record off` writes nothing. The runner
+passing one's; `--record always` keeps both; `--record off` writes nothing. A `capture`
+step's files are the scenario's own output, not part of the recording: a passing
+`on-failure` run keeps them, with a manifest naming them, and deletes everything else. The runner
 prints `recording: <dir>` for every failed run. `<build>` is `--build`, else `BUILD_DIR`,
 else `build`. `--out DIR` names the directory instead; a recording is never written to
 the home directory itself, nor inside the user's configuration, state, data or cache

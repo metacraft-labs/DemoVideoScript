@@ -3,8 +3,9 @@
 
 Each arm is a defect in where a recording goes, which runs are kept, what a
 deterministic capture checks, how a citation resolves, how a lane judges its
-runs, or a stage call's time limit; the kill command builds the binaries and
-runs the recordings suite (real runs of the reference backend, in process and over JSON lines).
+runs, what a passing run keeps of its captures, or a stage call's time limit;
+the kill command builds the binaries and runs the recordings suite (real runs
+of the reference backend, in process and over JSON lines).
 """
 import sys
 from pathlib import Path
@@ -42,11 +43,15 @@ ARMS = [
     Arm("C10", R, '        writeFile(opts.runDir / "failure" / "backend.log",',
         '        if false: writeFile(opts.runDir / "failure" / "backend.log",',
         "a failure bundle without the backend's log"),
-    Arm("C11", J, '    let limit = (if args != nil and args{"$timeoutMs"}.getInt(0) > 0: args["$timeoutMs"].getInt',
+    Arm("C11", R, "    elif opts.runDir != \"\" and dirExists(opts.runDir) and r.captureFiles.len > 0:",
+        "    elif false:", "a passing run's captures deleted with its recording"),
+    Arm("C12", R, "    if f.absolutePath.normalizedPath notin keep: removeFile(f)", "    discard f",
+        "a passing run's recording kept beside its captures"),
+    Arm("C13", J, '    let limit = (if args != nil and args{"$timeoutMs"}.getInt(0) > 0: args["$timeoutMs"].getInt',
         "    let limit = (if false: 0", "a stage call's limit ignored"),
-    Arm("C12", R, '        args["$timeoutMs"] = %opts.stageTimeoutMs\n', "",
+    Arm("C14", R, '        args["$timeoutMs"] = %opts.stageTimeoutMs\n', "",
         "the stage not given its time limit"),
-    Arm("C13", CLI, "                                                  stageTimeoutMs: stageTimeoutMs))",
+    Arm("C15", CLI, "                                                  stageTimeoutMs: stageTimeoutMs))",
         "                                                  stageTimeoutMs: 0))",
         "a lane's stage-timeout ignored"),
 ]
