@@ -71,6 +71,7 @@ modes: [fast, realistic] # default: fast
 applicable: [archive-from-keyboard.yaml, drag-to-reorder.yaml]
 unsupported: [search-and-matchers.yaml]
 retention: { runs: 5, failure-days: 7 }
+settle-timeout: 20000 # ms the implicit `settled` after an input may take (default 5000)
 ```
 
 `dvs lane <lane.yaml>` fails when an applicable scenario is `unsupported`, fails, or

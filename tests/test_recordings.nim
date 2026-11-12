@@ -150,6 +150,33 @@ suite "test lanes":
     check "lane knows-no-drag: 1 passed, 1 unsupported as expected, 0 problem(s)" in o
     check "expected unsupported: notes/drag-to-reorder (input.pointer.drag)" in o
 
+suite "the settle timeout":
+  # The one stand-in: tests/support/broken_backend.nim `unsettled`, a real
+  # process on the real protocol whose application never settles, so the
+  # step ends when the runner's settle timeout says, and the message names it.
+  let broken = bin / "broken-backend"
+  let scenario = root / "tests/runner/broken-backend.yaml"
+
+  test "--settle-timeout is how long the implicit settled after an input may take":
+    let build = scratch("settle1")
+    defer: removeDir(build)
+    let (o, code) = run(["run", scenario, "--pack", pack, "--backend", "cmd:" & broken & " unsettled",
+                         "--build", build, "--settle-timeout", "900"])
+    checkpoint o
+    check code == 1
+    check "did not settle within 900 ms" in o
+
+  test "a lane's settle-timeout reaches its runs":
+    let build = scratch("settle2")
+    defer: removeDir(build)
+    let lane = build / "settle.lane.yaml"
+    writeFile(lane, "lane: 1\nname: settle\npack: " & pack & "\nbackend: \"cmd:" & broken &
+              " unsettled\"\nsettle-timeout: 700\napplicable:\n  - " & scenario & "\n")
+    let (o, code) = run(["lane", lane, "--build", build])
+    checkpoint o
+    check code == 1
+    check "did not settle within 700 ms" in o
+
 suite "documentation captures":
   test "a capture run with a live clock on screen fails unless the clock is declared":
     let build = scratch("volatile")

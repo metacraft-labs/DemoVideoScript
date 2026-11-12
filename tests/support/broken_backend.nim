@@ -6,9 +6,14 @@
 ## way, so that the runner's handling of a broken backend is exercised over a
 ## real pipe.
 ##
-##   broken_backend non-json|exit|silent|wrong-id
+##   broken_backend non-json|exit|silent|wrong-id|unsettled
+##
+## `unsettled` is a backend whose application never settles: it locates the
+## one target a step names and takes the input, and then answers every
+## `settled` with "not met" — the runner's settle timeout is what ends the
+## step.
 
-import std/[json, os, strutils]
+import std/[json, os]
 
 let mode = (if paramCount() >= 1: paramStr(1) else: "non-json")
 var line: string
@@ -22,6 +27,10 @@ while stdin.readLine(line):
   of "stage", "end-stage":
     echo $(%*{"id": id, "ok": true})
   of "locate":
+    if mode == "unsettled":
+      echo $(%*{"id": id, "ok": true, "outcome": "one", "instance": "0", "role": "search-field"})
+      stdout.flushFile()
+      continue
     case mode
     of "non-json": echo "this is not a protocol line"
     of "exit":
@@ -30,6 +39,8 @@ while stdin.readLine(line):
     of "silent": sleep(60_000)
     of "wrong-id": echo $(%*{"id": id.getInt + 7, "ok": true, "outcome": "none"})
     else: discard
+  of "await":
+    echo $(%*{"id": id, "ok": true, "met": mode != "unsettled"})
   of "shutdown":
     echo $(%*{"id": id, "ok": true})
     quit 0
