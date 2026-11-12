@@ -10,7 +10,7 @@ alias fmt := format
 build_dir := env_var_or_default("BUILD_DIR", "build")
 dvs := build_dir / "bin/dvs"
 nim_flags := "--hints:off --styleCheck:usages --styleCheck:error --path:src"
-unit_suites := "test_grammar test_yaml test_predicates test_regex test_pacing"
+unit_suites := "test_grammar test_yaml test_predicates test_regex test_pacing test_surface"
 bin := build_dir / "bin"
 
 # Build `dvs`, the reference backend (`dvs-refapp` over JSON lines, `dvs-ref`

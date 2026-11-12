@@ -5,8 +5,11 @@
 ## an OCR pass or a model's state) builds `SurfaceNode`s and lets this module
 ## answer `locate`, `read` and `hit`; it then never resolves locators itself, so
 ## every such backend resolves them the same way (§4.2: one, none or ambiguous,
-## with candidates). Instances are identified by their path of child indices,
-## valid until the next input.
+## with candidates). An instance is identified by its path of keys from the
+## root: at each level its role and key values, and its place among the
+## siblings that share them. The binding's next read of the screen finds it
+## again by that path, so a node drawn, or removed, beside it between `locate`
+## and `read` does not move the instance onto another node.
 
 import std/[json, tables, options, strutils]
 import ./backend
@@ -22,8 +25,12 @@ type
     unreadable*: Table[string, string]
       ## properties the binding cannot read right now, and why
 
+  Step = tuple[key: string, nth: int]
+    ## one level of an instance's path: its `keyText` and its place among the
+    ## siblings with the same one
+
   SurfaceIndex* = object
-    ids: Table[string, seq[int]]
+    ids: Table[string, seq[Step]]
     next: int
 
 proc node*(role: string; x, y, w, h: float; props: JsonNode = newJObject();
@@ -70,6 +77,31 @@ proc at*(t: Tree; path: seq[int]): SurfaceNode =
     if i >= k.len: return nil
     result = k[i]
 
+proc keyedPath(t: Tree; path: seq[int]): seq[Step] =
+  var cur = t.root
+  for i in path:
+    let k = t.kids(cur)
+    let key = k[i].keyText
+    var nth = 0
+    for j in 0 ..< i:
+      if k[j].keyText == key: inc nth
+    result.add (key, nth)
+    cur = k[i]
+
+proc at(t: Tree; path: seq[Step]): SurfaceNode =
+  result = t.root
+  for (key, nth) in path:
+    var seen = 0
+    var next: SurfaceNode = nil
+    for c in t.kids(result):
+      if c.keyText == key:
+        if seen == nth:
+          next = c
+          break
+        inc seen
+    if next == nil: return nil
+    result = next
+
 proc parentOf(t: Tree; cur, target: SurfaceNode): SurfaceNode =
   for c in t.kids(cur):
     if c == target: return cur
@@ -89,7 +121,7 @@ proc register*(idx: var SurfaceIndex; t: Tree; n: SurfaceNode): string =
   discard t.pathTo(t.root, n, path)
   inc idx.next
   result = "i" & $idx.next
-  idx.ids[result] = path
+  idx.ids[result] = t.keyedPath(path)
 
 proc clear*(idx: var SurfaceIndex) = idx.ids.clear()
 
