@@ -37,11 +37,15 @@ type
     clockAt: string                ## set-clock: the time the application shows
     rec: tuple[on, deterministic: bool, dir: string, t0: MonoTime, events: seq[JsonNode]]
       ## the cast being recorded: the screen at every step
+    clients: Table[string, App]    ## named clients; `app` is the selected one
+    launch: tuple[width, height: int]
 
 const Capabilities = ["input.key", "input.chord", "input.text", "input.pointer.move",
                       "input.pointer.click", "input.pointer.drag", "input.wheel", "input.hover",
                       "observe.text", "observe.geometry", "observe.focus", "sync.event",
-                      "record.still", "record.cast", "record.mask"]
+                      "record.still", "record.cast", "record.mask",
+                      "client.multi", "client.reload", "client.duplicate",
+                      "client.isolation.separate", "client.isolation.shared"]
 
 proc nowMs(st: RefappState): int64 = (getMonoTime() - st.t0).inMilliseconds
 
@@ -451,6 +455,47 @@ proc maskedScreen(st: RefappState; mask: JsonNode): seq[string] =
       for c in e.rect.col ..< min(runes.len, e.rect.col + e.rect.w): runes[c] = "#".runeAt(0)
       result[r] = $runes
 
+proc newWindow(st: RefappState): App =
+  ## One more window of the notes application, on the seeded notes. The
+  ## application keeps its notes in memory per window, so two windows share
+  ## nothing whatever the isolation asked for, and a reload starts the window
+  ## again from the seeded notes.
+  result = newApp(st.launch.width, st.launch.height, proc (): int64 = st.nowMs)
+  if st.fixture != nil: result.loadNotes(st.fixture)
+  if st.clockAt.len > 0: result.wallClock = fixedClock(st.clockAt)
+
+proc clientOp(st: RefappState; op: string; args: JsonNode) =
+  let name = args{"name"}.getStr
+  proc known(n: string) =
+    if not st.clients.hasKey(n): raise backendError(beNotFound, "no client '" & n & "'")
+  case op
+  of "adopt":
+    st.requireApp()
+    st.clients[name] = st.app
+  of "open", "duplicate":
+    if op == "open" and args{"open"}.getStr != "notes-window":
+      raise backendError(beUnsupported, "no client kind '" & args{"open"}.getStr &
+        "' (this application has notes-window)")
+    if op == "duplicate": known(args{"from"}.getStr)
+    if st.launch.width == 0: raise backendError(beInternal, "the application was never launched")
+    st.clients[name] = st.newWindow()
+  of "select":
+    known(name)
+    st.app = st.clients[name]
+    st.ids.clear()
+  of "reload":
+    known(name)
+    let selected = st.app == st.clients[name]
+    st.clients[name] = st.newWindow()
+    if selected: st.app = st.clients[name]
+    st.ids.clear()
+  of "close":
+    known(name)
+    if st.app == st.clients[name]: st.app = nil
+    st.clients.del name
+    st.ids.clear()
+  else: raise backendError(beProtocol, "unknown client op '" & op & "'")
+
 proc newRefappBackend*(defect: PlantedDefect = dfNone; without: seq[string] = @[]): Backend =
   let st = RefappState(defect: defect, t0: getMonoTime(), without: without)
   result = Backend()
@@ -471,9 +516,8 @@ proc newRefappBackend*(defect: PlantedDefect = dfNone; without: seq[string] = @[
       if not fileExists(path): raise backendError(beStage, "seed-notes: no fixture " & path)
       st.fixture = parseFile(path)
     of "launch-app":
-      st.app = newApp(args{"width"}.getInt(60), args{"height"}.getInt(16),
-                      proc (): int64 = st.nowMs)
-      if st.fixture != nil: st.app.loadNotes(st.fixture)
+      st.launch = (args{"width"}.getInt(60), args{"height"}.getInt(16))
+      st.app = st.newWindow()
       if st.clockAt.len > 0: st.app.wallClock = fixedClock(st.clockAt)
       elif args{"clock"}.getBool(false): st.app.wallClock = liveClock()
     of "set-clock":
@@ -530,4 +574,6 @@ proc newRefappBackend*(defect: PlantedDefect = dfNone; without: seq[string] = @[
       writeFile(path, st.maskedScreen(args{"mask"}).join("\n") & "\n")
       result["files"] = %[path]
   result.hit = proc (x, y: float): Option[string] = st.hitAt(x, y)
+  if "client.multi" notin without:
+    result.client = proc (op: string; args: JsonNode) = st.clientOp(op, args)
   result.close = proc () = discard

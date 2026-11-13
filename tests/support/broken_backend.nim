@@ -14,7 +14,7 @@
 ## step.
 ##
 ## `slow-stage` is a backend whose stage takes 1.5 s, as one that records a
-## program or launches an editor takes long; after it, it works. Its stage
+## program or starts a large application takes long; after it, it works. Its stage
 ## refuses a call without the run's time limit (`$timeoutMs`), so a run that
 ## passes shows the limit arrived.
 

@@ -1,0 +1,15 @@
+scenario: 1
+name: runner/reload-main
+pack: notes-app
+summary: A scenario with one client reloads it by its implicit name, main.
+stage:
+  - use: seed-notes
+    with: { fixture: ../../conformance/fixtures/three-notes.json }
+  - use: launch-app
+steps:
+  - click: 'note-list/note[title="Groceries"]'
+  - chord: { bound: "notes.archive-selected" }
+  - wait: { until: "note-list.loaded" }
+  - expect: { at: note-list, count: 2 }
+  - reload: main
+  - expect: { at: note-list, count: 3 }

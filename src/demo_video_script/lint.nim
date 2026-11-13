@@ -23,8 +23,12 @@
 ## | L11 | a flow that, expanded, violates L1                               | error |
 ## | L12 | two steps with the same id, two beats with the same name, or two
 ##        captures with the same name                                      | error |
+## | L13 | with more than one client, a step that does not say which client it
+##        is addressed to (`as:`, its own or its beat's)                   | error |
+## | L14 | `as:` or a client action naming a client that is not open there (not
+##        declared, not yet opened, or closed), or opening one twice       | error |
 
-import std/[strutils, tables, sets]
+import std/[strutils, tables, sets, sequtils]
 import ./model, ./yaml, ./scenario, ./predicates
 
 type
@@ -281,7 +285,11 @@ proc lintStep(l: var Linter; s: Step) =
   of stExpect:
     l.checkObservation(s.observation)
   of stWait:
-    if s.untilIsObservation: l.checkObservation(s.observation)
+    if s.untilIsObservation:
+      l.checkObservation(s.observation)
+      if s.observation.holdMs >= 0:
+        l.err(s.line, s.col, "L1", "'holds' belongs to an expect: a wait ends as soon as " &
+          "its condition holds")
     else: l.checkSyncName(s.untilName, s.line, s.col)
   of stCapture:
     if s.hasCaptureOf: discard l.target(s.captureOf)
@@ -294,7 +302,7 @@ proc lintStep(l: var Linter; s: Step) =
     if backend notin l.sc.requires:
       l.err(s.line, s.col, "L8", "extension step 'ext: " & s.name & "' needs backend '" &
         backend & "'; declare it with requires: [" & backend & "]")
-  of stKey, stChord, stType: discard
+  of stKey, stChord, stType, stOpenClient, stReload, stDuplicate, stCloseClient: discard
   for _, alt in s.alternatives:
     l.lintSteps(alt)
 
@@ -380,6 +388,59 @@ proc lintAnchors(l: var Linter) =
       if s.kind == stBeat: walk(l, s.steps)
   l.walk(l.sc.steps)
 
+# --- clients (L13, L14) ---------------------------------------------------------------
+
+proc opensClients(steps: seq[Step]): bool =
+  for s in steps:
+    if s.kind in {stOpenClient, stDuplicate}: return true
+    if s.kind == stBeat and opensClients(s.steps): return true
+  false
+
+proc lintClients(l: var Linter) =
+  ## Proposal-Multiple-Clients.md §2.2, §2.6: with more than one client every
+  ## step names its client — there is no current client a step inherits from
+  ## the one before — and every client named is open at that point.
+  var open: HashSet[string]
+  if l.sc.clients.len == 0: open.incl MainClient
+  for k, c in l.sc.clients:
+    if c.name in open:
+      l.err(c.line, c.col, "L14", "client '" & c.name & "' is declared twice")
+    open.incl c.name
+    if c.open == StageClient and k > 0:
+      l.err(c.line, c.col, "L14", "only the first client can be the one the stage opened " &
+        "(open: stage)")
+    elif c.open != StageClient and l.pack != nil and not l.pack.clientKinds.hasKey(c.open):
+      l.err(c.line, c.col, "L7", "client kind '" & c.open & "' is not declared by the pack")
+  let multi = l.sc.clients.len > 1 or opensClients(l.sc.steps)
+  proc isOpen(l: var Linter; open: HashSet[string]; name: string; s: Step; what: string) =
+    if name notin open:
+      l.err(s.line, s.col, "L14", what & " names client '" & name & "', which is not open " &
+        "here (open: " & (if open.len == 0: "none" else: toSeq(open).join(", ")) & ")")
+  proc walk(l: var Linter; steps: seq[Step]; inherited: string; open: var HashSet[string]) =
+    for s in steps:
+      let eff = (if s.client != "": s.client else: inherited)
+      if s.client != "": l.isOpen(open, s.client, s, "as:")
+      case s.kind
+      of stReload:
+        l.isOpen(open, s.clientName, s, "reload")
+      of stCloseClient:
+        l.isOpen(open, s.clientName, s, "close-client")
+        open.excl s.clientName
+      of stDuplicate, stOpenClient:
+        if s.kind == stDuplicate: l.isOpen(open, s.clientFrom, s, "duplicate")
+        elif l.pack != nil and not l.pack.clientKinds.hasKey(s.clientOpen):
+          l.err(s.line, s.col, "L7", "client kind '" & s.clientOpen & "' is not declared by the pack")
+        if s.clientName in open:
+          l.err(s.line, s.col, "L14", "client '" & s.clientName & "' is already open")
+        open.incl s.clientName
+      of stBeat:
+        l.walk(s.steps, eff, open)
+      else:
+        if multi and eff == "":
+          l.err(s.line, s.col, "L13", "this scenario has more than one client; say which one " &
+            "this " & $s.kind & " is addressed to (as: <client>, on the step or its beat)")
+  l.walk(l.sc.steps, "", open)
+
 # --- the pack (L10, L11 at definition) ------------------------------------------------
 
 proc predicateWords(): HashSet[string] =
@@ -400,7 +461,7 @@ proc propertyKeywords(): HashSet[string] =
 proc flowKeywords(): HashSet[string] =
   for k in ActionKeys: result.incl k
   for k in AnnotationKeys: result.incl k
-  for k in ["settle", "steps", "with"]: result.incl k
+  for k in ["settle", "steps", "with", "as"]: result.incl k
 
 proc lintPack*(pack: Pack): Diagnostics =
   ## L10 and L11 for a pack on its own.
@@ -462,5 +523,6 @@ proc lintScenario*(sc: Scenario; pack: Pack): Diagnostics =
             l.err(k.line, k.col, "L7", "stage '" & call.use & "' has no parameter '" & k.s & "'")
     l.lintSteps(sc.steps)
     l.lintSequence()
+  l.lintClients()
   l.lintAnchors()
   l.diags

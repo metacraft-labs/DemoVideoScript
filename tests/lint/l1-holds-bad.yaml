@@ -1,0 +1,8 @@
+# expect: L1:8
+scenario: 1
+name: lint/l1-holds-bad
+pack: notes-app
+stage:
+  - use: launch-app
+steps:
+  - wait: { until: { at: note-list, count: 3, holds: 2s } }

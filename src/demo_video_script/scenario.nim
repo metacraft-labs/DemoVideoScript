@@ -14,10 +14,11 @@ import ./model, ./yaml
 const
   ImplementedVersion* = 1
   ActionKeys* = ["key", "chord", "type", "press", "release", "move", "hover", "click",
-                 "drag", "wheel", "expect", "wait", "flow", "beat", "capture", "ext"]
+                 "drag", "wheel", "expect", "wait", "flow", "beat", "capture", "ext",
+                 "open-client", "reload", "duplicate", "close-client"]
   AnnotationKeys* = ["id", "lead-in", "dwell", "chapter", "narration", "caption", "callout",
                      "alternatives"]
-  ReservedObservationKeys* = ["at", "assert", "geometry", "role", "absent", "present"]
+  ReservedObservationKeys* = ["at", "assert", "geometry", "role", "absent", "present", "holds"]
   PacePresets* = ["texting", "quick", "thoughtful", "careful"]
   PaceParams* = ["preset", "key-mean", "key-sigma", "key-min", "key-max", "curvature",
                  "overshoot", "commit-pause", "seed"]
@@ -25,7 +26,9 @@ const
                    "input.pointer.click", "input.pointer.drag", "input.wheel", "input.hover",
                    "observe.text", "observe.geometry", "observe.style", "observe.image",
                    "observe.focus", "sync.event", "sync.visual-settle",
-                   "record.cast", "record.video", "record.still", "record.mask"]
+                   "record.cast", "record.video", "record.still", "record.mask",
+                   "client.multi", "client.reload", "client.duplicate",
+                   "client.isolation.separate", "client.isolation.shared"]
 
 type
   Ctx* = object
@@ -284,6 +287,7 @@ proc parseGeometry(c: var Ctx; n: YNode; ok: var bool): GeometryCheck =
 proc parseObservation*(c: var Ctx; n: YNode; what: string; ok: var bool): Observation =
   result.absent = -1
   result.present = -1
+  result.holdMs = -1
   if not c.expectMap(n, what):
     ok = false
     return
@@ -325,6 +329,9 @@ proc parseObservation*(c: var Ctx; n: YNode; what: string; ok: var bool): Observ
     of "present":
       result.present = c.expectBool(v, "present")
       if result.present < 0: ok = false
+    of "holds":
+      result.holdMs = c.parseDuration(v, "holds")
+      if result.holdMs < 0: ok = false
     else:
       if not k.s.isName:
         c.structural(k, "'" & k.s & "' is not a property name ([a-z][a-z0-9-]*)")
@@ -468,7 +475,7 @@ proc parseStep*(c: var Ctx; n: YNode): Step =
   var unknown = false
   for k, _ in n.pairs:
     if k.s in ActionKeys: actions.add k
-    elif k.s in AnnotationKeys or k.s in ["settle", "steps", "with"]: discard
+    elif k.s in AnnotationKeys or k.s in ["settle", "steps", "with", "as"]: discard
     elif k.s == "use" or k.s == "stage":
       c.report(k, "L1", "a stage procedure cannot be called from steps; after the stage, " &
         "steps are only input, observations and waits (§4.7)")
@@ -506,6 +513,9 @@ proc parseStep*(c: var Ctx; n: YNode): Step =
     c.report(n.keyNode("with"), "L1", "'with' belongs to a flow call or an extension step")
     ok = false
   c.parseAnnotations(n, s, ok)
+  if n.get("as") != nil:
+    s.client = c.parseName(n.get("as"), "as")
+    if s.client == "": ok = false
   case kind
   of stKey:
     if c.expectString(v, "key"):
@@ -673,6 +683,40 @@ proc parseStep*(c: var Ctx; n: YNode): Step =
       s.steps = c.parseSteps(st, "beat steps")
       for k in before ..< c.diags.len:
         if c.diags[k].phase == phStructural and c.diags[k].severity == sevError: ok = false
+  of stReload, stCloseClient:
+    s.clientName = c.parseName(v, $kind)
+    if s.clientName == "": ok = false
+  of stDuplicate:
+    if c.expectMap(v, "duplicate"):
+      if not c.checkKeys(v, ["client", "name"], "duplicate"): ok = false
+      for (key, dest) in [("client", addr s.clientFrom), ("name", addr s.clientName)]:
+        let x = v.get(key)
+        if x == nil:
+          c.structural(v, "duplicate needs '" & key & "'")
+          ok = false
+        else:
+          dest[] = c.parseName(x, "duplicate " & key)
+          if dest[] == "": ok = false
+    else: ok = false
+  of stOpenClient:
+    if c.expectMap(v, "open-client"):
+      if not c.checkKeys(v, ["name", "open", "isolation"], "open-client"): ok = false
+      for (key, dest) in [("name", addr s.clientName), ("open", addr s.clientOpen)]:
+        let x = v.get(key)
+        if x == nil:
+          c.structural(v, "open-client needs '" & key & "'")
+          ok = false
+        else:
+          dest[] = c.parseName(x, "open-client " & key)
+          if dest[] == "": ok = false
+      let iso = v.get("isolation")
+      if iso != nil:
+        if iso.kind == yString and iso.s in ["separate", "shared"]:
+          s.isolation = parseEnum[Isolation](iso.s)
+        else:
+          c.structural(iso, "isolation is separate or shared")
+          ok = false
+    else: ok = false
   of stCapture:
     if c.expectMap(v, "capture"):
       if not c.checkKeys(v, ["name", "of"], "capture"): ok = false
@@ -723,7 +767,8 @@ proc parseScenarioNode*(root: YNode; file: string): (Scenario, Diagnostics) =
     return (sc, c.diags)
   else:
     sc.version = ImplementedVersion
-  discard c.checkKeys(root, ["scenario", "name", "pack", "summary", "requires", "stage", "steps"],
+  discard c.checkKeys(root, ["scenario", "name", "pack", "summary", "requires", "stage", "clients",
+                            "steps"],
     "a scenario")
   let nm = root.get("name")
   if nm == nil: c.structural(root, "missing 'name'")
@@ -759,6 +804,25 @@ proc parseScenarioNode*(root: YNode; file: string): (Scenario, Diagnostics) =
           if call.args != nil and call.args.kind != yMap:
             c.structural(call.args, "with must be a mapping")
           sc.stage.add call
+    of "clients":
+      if c.expectMap(v, "clients"):
+        if v.keys.len == 0: c.structural(v, "clients declares at least one client")
+        for k2, d in v.pairs:
+          if not k2.s.isName:
+            c.structural(k2, "client name '" & k2.s & "' must be [a-z][a-z0-9-]*")
+            continue
+          if not c.expectMap(d, "client '" & k2.s & "'"): continue
+          discard c.checkKeys(d, ["open", "isolation"], "client '" & k2.s & "'")
+          var decl = ClientDecl(name: k2.s, line: k2.line, col: k2.col)
+          let o = d.get("open")
+          if o == nil: c.structural(d, "client '" & k2.s & "' needs 'open' (a client kind, or stage)")
+          else: decl.open = c.parseName(o, "open")
+          let iso = d.get("isolation")
+          if iso != nil:
+            if iso.kind == yString and iso.s in ["separate", "shared"]:
+              decl.isolation = parseEnum[Isolation](iso.s)
+            else: c.structural(iso, "isolation is separate or shared")
+          sc.clients.add decl
     of "steps": sc.steps = c.parseSteps(v, "steps")
     else: discard
   if root.get("steps") == nil: c.structural(root, "missing 'steps'")

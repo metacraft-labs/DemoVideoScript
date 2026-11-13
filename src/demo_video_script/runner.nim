@@ -72,6 +72,7 @@ type
     variant*: string
     artifacts*: seq[string]
     name*: string               ## a capture step's capture name
+    client*: string             ## the client the step was addressed to; "" with one client
 
   Unsupported* = object
     path*: string
@@ -99,6 +100,7 @@ type
     variant: string
     callouts: seq[Callout]   ## the callouts that start with this step (its own, or its
                              ## beat's or flow call's when it is the first inside)
+    client: string           ## `as:` — its own, or its beat's or flow call's
 
   StepFailure = object of CatchableError
 
@@ -170,6 +172,10 @@ proc stepNeeds(s: Step): seq[string] =
     if s.untilIsObservation: result.add observationNeeds(s.observation)
   of stCapture: result.add "record.still"
   of stExt: result.add "ext." & s.name.split('.')[0]
+  of stReload: result.add "client.reload"
+  of stDuplicate: result.add ["client.multi", "client.duplicate", "client.isolation.shared"]
+  of stOpenClient: result.add ["client.multi", "client.isolation." & $s.isolation]
+  of stCloseClient: result.add "client.multi"
   else: discard
 
 proc affordanceFor(s: Step; which: string): string =
@@ -214,19 +220,20 @@ proc bindingNeeds(r: Run; s: Step): seq[string] =
   acc
 
 proc expand(r: Run; steps: seq[Step]; prefix, beat: string; depth: int;
-            into: var seq[ExecStep]; missing: var seq[Unsupported]) =
+            into: var seq[ExecStep]; missing: var seq[Unsupported]; client = "") =
   for k, s in steps:
     let path = (if prefix == "": $(k + 1) else: prefix & $(k + 1))
     let first = into.len
+    let client = (if s.client != "": s.client else: client)
     case s.kind
     of stBeat:
-      r.expand(s.steps, path & ".", s.name, depth, into, missing)
+      r.expand(s.steps, path & ".", s.name, depth, into, missing, client)
       if into.len > first: into[first].callouts = s.callouts & into[first].callouts
     of stFlow:
       if depth > 16: raise newException(ValueError, "flows nested too deeply at step " & path)
       var pd: Diagnostics
       let body = expandFlow(r.pack, s.name, s.args, pd, r.sc.file)
-      r.expand(body, path & ">", beat, depth + 1, into, missing)
+      r.expand(body, path & ">", beat, depth + 1, into, missing, client)
       if into.len > first: into[first].callouts = s.callouts & into[first].callouts
     else:
       var needs = stepNeeds(s)
@@ -235,7 +242,7 @@ proc expand(r: Run; steps: seq[Step]; prefix, beat: string; depth: int;
         if c notin r.capSet: lacking.add c
       for c in r.bindingNeeds(s): lacking.add c
       if lacking.len == 0:
-        into.add ExecStep(step: s, path: path, beat: beat, callouts: s.callouts)
+        into.add ExecStep(step: s, path: path, beat: beat, callouts: s.callouts, client: client)
         continue
       # an alternative may stand in, but only when it is itself admissible
       var used = false
@@ -243,7 +250,7 @@ proc expand(r: Run; steps: seq[Step]; prefix, beat: string; depth: int;
         if s.alternatives.hasKey(gap):
           var alt: seq[ExecStep]
           var altMissing: seq[Unsupported]
-          r.expand(s.alternatives[gap], path & "~", beat, depth, alt, altMissing)
+          r.expand(s.alternatives[gap], path & "~", beat, depth, alt, altMissing, client)
           if altMissing.len == 0 and lacking.len == 1:
             for a in alt.mitems: a.variant = gap
             if alt.len > 0: alt[0].callouts = s.callouts & alt[0].callouts
@@ -541,6 +548,7 @@ proc stepJson*(sr: StepResult): JsonNode =
   if sr.variant != "": result["variant"] = %sr.variant
   if sr.artifacts.len > 0: result["artifacts"] = %sr.artifacts
   if sr.name != "": result["name"] = %sr.name
+  if sr.client != "": result["client"] = %sr.client
 
 proc manifestJson*(res: RunResult; r: Run): JsonNode =
   var steps = newJArray()
@@ -640,6 +648,14 @@ proc checkStable(r: var Run; args: JsonNode; files: seq[string]) =
         (if rows.len > 0 and rows.len < 20: " (lines " & rows.join(", ") & ")" else: "") &
         "; declare it with --pin")
 
+proc clientNeeds(sc: Scenario): seq[string] =
+  if sc.clients.len > 1 or (sc.clients.len == 1 and sc.clients[0].open != StageClient):
+    result.add "client.multi"
+  for c in sc.clients:
+    if c.open != StageClient:
+      let cap = "client.isolation." & $c.isolation
+      if cap notin result: result.add cap
+
 proc applicability*(sc: Scenario; pack: Pack; hello: Hello): seq[Unsupported] =
   ## Whether `sc` can run on a backend that answered `hello`, without running
   ## it (§4.9): the steps, and the capabilities, that exclude it — empty when
@@ -649,6 +665,8 @@ proc applicability*(sc: Scenario; pack: Pack; hello: Hello): seq[Unsupported] =
   r.capSet.incl "ext." & hello.backend
   var plan: seq[ExecStep]
   r.expand(sc.steps, "", "", 0, plan, result)
+  for c in clientNeeds(sc):
+    if c notin r.capSet: result.add Unsupported(path: "clients", capability: c)
 
 proc runScenario*(sc: Scenario; pack: Pack; b: Backend; options: RunOptions): RunResult =
   var r = Run(sc: sc, pack: pack, b: b, opts: options, t0: getMonoTime(),
@@ -702,6 +720,10 @@ proc runScenario*(sc: Scenario; pack: Pack; b: Backend; options: RunOptions): Ru
   # that masks them (§9.2); without it the captures would not be stable
   if opts.deterministic and opts.pinned.len > 0 and "record.mask" notin r.capSet:
     missing.add Unsupported(path: "--pin", capability: "record.mask")
+  # the declared clients (Proposal-Multiple-Clients.md §2.4): more than one,
+  # or one the backend has to open, needs a backend that keeps clients
+  for c in clientNeeds(sc):
+    if c notin r.capSet: missing.add Unsupported(path: "clients", capability: c)
   if missing.len > 0:
     r.res.unsupported = missing
     var parts: seq[string]
@@ -722,6 +744,48 @@ proc runScenario*(sc: Scenario; pack: Pack; b: Backend; options: RunOptions): Ru
       b.endStage()
   except BackendError as e:
     finish(roError, "stage: " & e.msg)
+  # the declared clients, opened by the backend after the stage (§2.1); the
+  # stage's own client is named, not opened
+  var openClients: seq[string]
+  var kinds: Table[string, string]   # client -> its kind, for the pack's `opened`
+  var current = ""
+  proc opened(name: string) =
+    # the pack's condition for "this client finished opening", if it has one
+    let cond = pack.clientKinds.getOrDefault(kinds.getOrDefault(name))
+    if cond != "" and not b.await(cond, "", opts.timeoutMs):
+      fail("client '" & name & "' did not finish opening ('" & cond & "' within " &
+           $opts.timeoutMs & " ms)")
+  try:
+    # a scenario without `clients:` has one client, `main` (§2.1); a client
+    # action on it (reload, duplicate) needs the backend to know it by name
+    if sc.clients.len == 0 and b.client != nil and plan.anyIt(it.step.kind in ClientKinds):
+      b.client("adopt", %*{"name": MainClient})
+      openClients.add MainClient
+      current = MainClient
+    for c in sc.clients:
+      if b.client != nil:
+        if c.open == StageClient:
+          b.client("adopt", %*{"name": c.name})
+          current = c.name    # the stage's client is the one the backend serves
+        else:
+          b.client("open", %*{"name": c.name, "open": c.open, "isolation": $c.isolation})
+          kinds[c.name] = c.open
+      openClients.add c.name
+    for c in sc.clients:
+      if c.open != StageClient:
+        if b.client != nil and current != c.name:
+          b.client("select", %*{"name": c.name})
+          current = c.name
+        opened(c.name)
+  except BackendError as e:
+    finish(roError, "clients: " & e.msg)
+  except StepFailure as e:
+    finish(roError, "clients: " & e.msg)
+  let multi = openClients.len > 1 or plan.anyIt(it.step.kind in {stOpenClient, stDuplicate})
+  proc select(name: string) =
+    if name != "" and name != current and b.client != nil:
+      b.client("select", %*{"name": name})
+      current = name
   let recording = opts.record != rpOff and opts.runDir != ""
   if recording:
     createDir(opts.runDir / "steps")
@@ -740,7 +804,8 @@ proc runScenario*(sc: Scenario; pack: Pack; b: Backend; options: RunOptions): Ru
     let s = es.step
     var sr = StepResult(index: k + 1, path: es.path, kind: $s.kind, beat: es.beat,
                         description: describeStep(s), variant: es.variant,
-                        resolved: newJObject(), observed: newJObject())
+                        resolved: newJObject(), observed: newJObject(),
+                        client: (if s.kind in ClientKinds: s.clientName else: es.client))
     if failedAt >= 0:
       sr.status = ssNotRun
       r.res.steps.add sr
@@ -775,7 +840,30 @@ proc runScenario*(sc: Scenario; pack: Pack; b: Backend; options: RunOptions): Ru
         sr.resolved["callouts"] = cs
     var pacing = 0.0
     try:
+      if s.kind notin ClientKinds: select(es.client)
       case s.kind
+      of ClientKinds:
+        case s.kind
+        of stOpenClient:
+          b.client("open", %*{"name": s.clientName, "open": s.clientOpen,
+                              "isolation": $s.isolation})
+          openClients.add s.clientName
+          kinds[s.clientName] = s.clientOpen
+        of stDuplicate:
+          b.client("duplicate", %*{"name": s.clientName, "from": s.clientFrom})
+          openClients.add s.clientName
+          if kinds.hasKey(s.clientFrom): kinds[s.clientName] = kinds[s.clientFrom]
+        of stReload: b.client("reload", %*{"name": s.clientName})
+        else:
+          b.client("close", %*{"name": s.clientName})
+          openClients.keepItIf(it != s.clientName)
+        # the backend may have changed which client it serves: address the
+        # next call explicitly
+        current = ""
+        if s.kind != stCloseClient:
+          select(s.clientName)
+          opened(s.clientName)
+          r.settle(s)
       of InputKinds:
         pacing = r.sendInput(s, sr)
         r.settle(s)
@@ -784,6 +872,20 @@ proc runScenario*(sc: Scenario; pack: Pack; b: Backend; options: RunOptions): Ru
         let why = r.checkObservation(s.observation, observed)
         sr.observed = observed
         if why != "": fail(why)
+        if s.observation.holdMs >= 0:
+          # a span assertion (§2.5): read again and again until the span has
+          # passed; the first read that fails fails the step
+          let until = r.ms + float(s.observation.holdMs)
+          var reads = 1
+          while r.ms < until:
+            sleep(100)
+            let again = r.checkObservation(s.observation, observed)
+            inc reads
+            if again != "":
+              sr.observed = observed
+              fail("held for " & $int(r.ms - sr.startMs) & " ms of " & $s.observation.holdMs &
+                   " (read " & $reads & "), then: " & again)
+          sr.observed["reads"] = %reads
       of stWait:
         var observed = newJObject()
         r.waitStep(s, observed)
@@ -833,9 +935,10 @@ proc runScenario*(sc: Scenario; pack: Pack; b: Backend; options: RunOptions): Ru
       let base = "steps" / $(k + 1)
       writeJson(opts.runDir / (base & "-state.json"), %*{"step": stepJson(sr)})
       # a capture step's still is its capture
-      if "record.still" in r.capSet and s.kind != stCapture:
+      if "record.still" in r.capSet and s.kind != stCapture and s.kind != stCloseClient:
         try:
-          let res = b.record(recStill, %*{"dir": opts.runDir, "path": base & "-" & $s.kind,
+          let suffix = (if multi and sr.client != "": "-" & sr.client else: "")
+          let res = b.record(recStill, %*{"dir": opts.runDir, "path": base & "-" & $s.kind & suffix,
                                             "name": $s.kind})
           for f in res{"files"}.getElems: sr.artifacts.add f.getStr
         except BackendError: discard
@@ -849,9 +952,19 @@ proc runScenario*(sc: Scenario; pack: Pack; b: Backend; options: RunOptions): Ru
           (if b.log == nil: "(an in-process backend: its messages are in the run's output)\n"
            else: b.log()))
         if "record.still" in r.capSet:
-          try: discard b.record(recStill, %*{"dir": opts.runDir, "path": "failure/surface",
-                                             "name": "surface"})
-          except BackendError: discard
+          if multi:
+            # a leak between clients shows on the one that was not acted on
+            # (§2.6): every open client's surface
+            for name in openClients:
+              try:
+                select(name)
+                discard b.record(recStill, %*{"dir": opts.runDir,
+                                              "path": "failure/surface-" & name, "name": "surface"})
+              except BackendError: discard
+          else:
+            try: discard b.record(recStill, %*{"dir": opts.runDir, "path": "failure/surface",
+                                               "name": "surface"})
+            except BackendError: discard
     r.res.steps.add sr
   # an observation that only holds because of a dwell or lead-in (§6.3, L6)
   for d in diags:

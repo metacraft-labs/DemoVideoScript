@@ -1,0 +1,6 @@
+scenario: 1
+name: schema/client-bad-isolation
+clients:
+  a: { open: notes-window, isolation: private }
+steps:
+  - key: Enter

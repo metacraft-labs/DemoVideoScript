@@ -59,6 +59,52 @@ suite "the runner on the reference backend":
     check not fileExists(tmp / "stage-ran.txt")   # the stage never ran
     check r["steps"].len == 0
 
+  test "two clients: steps go to the client they name, a span is read more than once, client actions run":
+    let f = root / "tests/runner/two-clients.yaml"
+    let a = runJson(f, "refapp")
+    let b = runJson(f, "cmd:" & refapp)
+    checkpoint $a
+    check a["outcome"].getStr == "passed"
+    check b["outcome"].getStr == "passed"
+    check statuses(a) == statuses(b)
+    var clients: seq[string]
+    for s in a["steps"]: clients.add s{"client"}.getStr
+    check clients[0] == "a" and clients[1] == "b"
+    # the `holds:` step read its observation again and again over its span
+    var held = false
+    for s in a["steps"]:
+      if s{"observed"}{"reads"}.getInt(0) >= 2: held = true
+    check held
+
+  test "a scenario with one client reloads it as main":
+    let r = runJson(root / "tests/runner/reload-main.yaml", "cmd:" & refapp)
+    check r["outcome"].getStr == "passed"
+
+  test "a scenario with two clients is unsupported, before its stage, on a backend with one client":
+    let r = runJson(root / "tests/runner/two-clients.yaml", "cmd:" & refapp & " --without=client.multi")
+    check r["outcome"].getStr == "unsupported"
+    var caps: seq[string]
+    for u in r["unsupported"]: caps.add u["capability"].getStr
+    check "client.multi" in caps
+    check r["steps"].len == 0
+
+  test "the calls after a client is selected go to that client":
+    let t = getTempDir() / "dvs-clients-" & $getCurrentProcessId()
+    defer: removeFile(t)
+    let r = runJson(root / "tests/runner/two-clients.yaml", "cmd:" & refapp,
+                    env = [("DVS_PROTOCOL_TRANSCRIPT", t)])
+    check r["outcome"].getStr == "passed"
+    var ops: seq[string]
+    for line in lines(t):
+      if line.startsWith("> "):
+        let c = parseJson(line[2 .. ^1])
+        if c["call"].getStr == "client": ops.add c["op"].getStr & ":" & c["name"].getStr
+    check ops[0] == "adopt:a"
+    check ops[1] == "open:b"
+    check "duplicate:c" in ops and "reload:a" in ops and "close:b" in ops
+    # every step addressed to another client than the last one is preceded by a select
+    check ops.countIt(it.startsWith("select:")) >= 4
+
   test "a missing drag is unsupported where the scenario has no alternative, and the alternative runs where it has one":
     let r = runJson(root / "conformance/scenarios/drag-to-reorder.yaml", "refapp-no-drag")
     check r["outcome"].getStr == "unsupported"

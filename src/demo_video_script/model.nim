@@ -69,6 +69,9 @@ type
     role*: string                    ## expected role of the located instance
     absent*: int                     ## -1 unspecified, 0 false, 1 true
     present*: int
+    holdMs*: Millis
+      ## `holds:` — the observation must stay true for this long, read
+      ## repeatedly (a span assertion, not a sleep); -1 when absent
 
   SpanKind* = enum
     spanNarration = "narration", spanCaption = "caption"
@@ -89,7 +92,24 @@ type
     stKey = "key", stChord = "chord", stType = "type", stPress = "press",
     stRelease = "release", stMove = "move", stHover = "hover", stClick = "click",
     stDrag = "drag", stWheel = "wheel", stExpect = "expect", stWait = "wait",
-    stFlow = "flow", stBeat = "beat", stCapture = "capture", stExt = "ext"
+    stFlow = "flow", stBeat = "beat", stCapture = "capture", stExt = "ext",
+    stOpenClient = "open-client", stReload = "reload", stDuplicate = "duplicate",
+    stCloseClient = "close-client"
+
+  Isolation* = enum
+    ## What two clients of one application share on the client side
+    ## (Proposal-Multiple-Clients.md §2.1): nothing (`separate`: two browsers,
+    ## two profiles), or what the medium shares between two of its windows
+    ## (`shared`: two tabs of one browser).
+    isoSeparate = "separate", isoShared = "shared"
+
+  ClientDecl* = object
+    ## One client of `clients:`. `open` names a pack-declared client kind, or
+    ## `stage` for the client the stage opened (the first one only).
+    name*: string
+    open*: string
+    isolation*: Isolation
+    line*, col*: int
 
   Button* = enum
     btnLeft = "left", btnRight = "right", btnMiddle = "middle"
@@ -134,6 +154,12 @@ type
     steps*: seq[Step]                ## stBeat
     captureOf*: Target
     hasCaptureOf*: bool
+    client*: string                   ## `as:` — the client the step is addressed to; "" when unaddressed
+    clientName*: string              ## stOpenClient / stDuplicate: the new client;
+                                     ## stReload / stCloseClient: the client acted on
+    clientFrom*: string              ## stDuplicate: the client duplicated
+    clientOpen*: string              ## stOpenClient: the client kind
+    isolation*: Isolation            ## stOpenClient
 
   StageCall* = object
     use*: string
@@ -148,6 +174,7 @@ type
     summary*: string
     requires*: seq[string]
     stage*: seq[StageCall]
+    clients*: seq[ClientDecl]        ## empty: one client, `main`
     steps*: seq[Step]
 
   # --- packs ---------------------------------------------------------------------
@@ -238,11 +265,17 @@ type
     sync*: OrderedTable[string, SyncDecl]
     flows*: OrderedTable[string, FlowDecl]
     stages*: OrderedTable[string, StageDecl]
+    clientKinds*: OrderedTable[string, string]
+      ## client kind -> the sync condition that means it finished opening ("" none)
 
 const
   InputKinds* = {stKey, stChord, stType, stPress, stRelease, stMove, stHover, stClick,
                  stDrag, stWheel}
   PointerTargetKinds* = {stMove, stHover, stClick, stWheel}
+  ClientKinds* = {stOpenClient, stReload, stDuplicate, stCloseClient}
+    ## Client actions: what a person does to a client as a whole
+  StageClient* = "stage"             ## `open: stage` — the client the stage opened
+  MainClient* = "main"               ## the one client of a scenario without `clients:`
   ImplicitProperties* = ["geometry", "present"]
 
 proc hasErrors*(ds: Diagnostics): bool =

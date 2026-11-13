@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/metacraft-labs/DemoVideoScript/schemas/v1/backend-protocol.schema.json",
   "title": "DemoVideoScript backend protocol, version 1 (JSON lines)",
-  "$comment": "A response answers the request with the same id: response-<call> (response-empty for stage, end-stage, send, shutdown) or response-error.",
+  "$comment": "A response answers the request with the same id: response-<call> (response-empty for stage, end-stage, send, client, shutdown) or response-error.",
   "$defs": {
     "segment": {
       "oneOf": [
@@ -201,7 +201,12 @@
               "record.cast",
               "record.video",
               "record.still",
-              "record.mask"
+              "record.mask",
+              "client.multi",
+              "client.reload",
+              "client.duplicate",
+              "client.isolation.separate",
+              "client.isolation.shared"
             ]
           }
         },
@@ -663,6 +668,55 @@
             },
             "y": {
               "type": "number"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "id",
+            "call",
+            "op",
+            "name"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "type": "integer"
+            },
+            "call": {
+              "const": "client"
+            },
+            "op": {
+              "enum": [
+                "adopt",
+                "open",
+                "select",
+                "reload",
+                "duplicate",
+                "close"
+              ],
+              "$comment": "a client of the application as a whole (Proposal-Multiple-Clients.md); select addresses the calls that follow"
+            },
+            "name": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9-]*$"
+            },
+            "open": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9-]*$",
+              "$comment": "open: the pack's client kind"
+            },
+            "isolation": {
+              "enum": [
+                "separate",
+                "shared"
+              ]
+            },
+            "from": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9-]*$",
+              "$comment": "duplicate: the client duplicated"
             }
           }
         },

@@ -1,0 +1,18 @@
+# expect:
+scenario: 1
+name: lint/l14-ok
+pack: notes-app
+stage:
+  - use: launch-app
+clients:
+  a: { open: stage }
+steps:
+  - key: Enter
+    as: a
+  - duplicate: { client: a, name: copy }
+  - key: Enter
+    as: copy
+  - open-client: { name: d, open: notes-window, isolation: shared }
+  - close-client: copy
+  - key: Enter
+    as: d

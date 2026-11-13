@@ -49,6 +49,7 @@ proc emitObservation(o: Observation): JsonNode =
   if o.role != "": result["role"] = %o.role
   if o.absent >= 0: result["absent"] = %(o.absent == 1)
   if o.present >= 0: result["present"] = %(o.present == 1)
+  if o.holdMs >= 0: result["holds"] = %formatDuration(o.holdMs)
 
 proc emitSpan(s: Span): JsonNode =
   result = %*{"text": s.text}
@@ -123,6 +124,12 @@ proc emitStep*(s: Step): JsonNode =
     var c = %*{"name": s.name}
     if s.hasCaptureOf: c["of"] = %($s.captureOf.at)
     result["capture"] = c
+  of stReload, stCloseClient: result[$s.kind] = %s.clientName
+  of stDuplicate: result["duplicate"] = %*{"client": s.clientFrom, "name": s.clientName}
+  of stOpenClient:
+    result["open-client"] = %*{"name": s.clientName, "open": s.clientOpen,
+                               "isolation": $s.isolation}
+  if s.client != "": result["as"] = %s.client
   if s.kind in InputKinds and not s.settle: result["settle"] = %false
   if s.id != "": result["id"] = %s.id
   if s.leadIn >= 0: result["lead-in"] = %formatDuration(s.leadIn)
@@ -160,4 +167,8 @@ proc emitScenario*(sc: Scenario): JsonNode =
       if c.args != nil: o["with"] = c.args.toJson
       a.add o
     result["stage"] = a
+  if sc.clients.len > 0:
+    var o = newJObject()
+    for c in sc.clients: o[c.name] = %*{"open": c.open, "isolation": $c.isolation}
+    result["clients"] = o
   result["steps"] = emitSteps(sc.steps)

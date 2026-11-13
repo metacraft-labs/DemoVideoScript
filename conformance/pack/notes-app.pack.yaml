@@ -96,6 +96,11 @@ roles:
   clock:
     properties: { time: text }
 
+# A second window of the application on the seeded notes (scenarios with more
+# than one client).
+clients:
+  notes-window: ~
+
 sync:
   settled: ~
   idle: ~

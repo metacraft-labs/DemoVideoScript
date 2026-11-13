@@ -57,7 +57,8 @@ proc parsePackNode*(root: YNode; file: string): (Pack, Diagnostics) =
     c.report(ver, "version", "pack format version " & ver.scalarText &
       " is not implemented; this parser implements version 1")
     return (pack, c.diags)
-  discard c.checkKeys(root, ["pack", "name", "summary", "root", "roles", "sync", "flows", "stages"],
+  discard c.checkKeys(root, ["pack", "name", "summary", "root", "roles", "sync", "flows", "stages",
+                            "clients"],
     "a pack")
   for req in ["name", "root", "roles"]:
     if root.get(req) == nil: c.structural(root, "missing '" & req & "'")
@@ -215,6 +216,26 @@ proc parsePackNode*(root: YNode; file: string): (Pack, Diagnostics) =
         elif sv.kind != yNull:
           c.structural(sv, "a stage is { params } or ~")
         pack.stages[sk.s] = d
+    of "clients":
+      # the client kinds a scenario can open (Proposal-Multiple-Clients.md §2.4),
+      # each with the condition that means it finished opening
+      if v.kind != yMap:
+        c.structural(v, "clients is a mapping from client kind to { opened }")
+        continue
+      for ck, cv in v.pairs:
+        if not ck.s.isName:
+          c.structural(ck, "client kind '" & ck.s & "' is not a name")
+          continue
+        var opened = ""
+        if cv.kind == yMap:
+          discard c.checkKeys(cv, ["opened"], "client kind '" & ck.s & "'")
+          let o = cv.get("opened")
+          if o != nil:
+            if o.kind == yString and o.s.isDottedName: opened = o.s
+            else: c.structural(o, "opened names a sync condition")
+        elif cv.kind != yNull:
+          c.structural(cv, "a client kind is { opened } or ~")
+        pack.clientKinds[ck.s] = opened
     else: discard
   # --- semantic checks -----------------------------------------------------------
   if not c.diags.hasStructuralErrors:

@@ -37,6 +37,16 @@
         "$ref": "#/$defs/stageCall"
       }
     },
+    "clients": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": false,
+      "patternProperties": {
+        "^[a-z][a-z0-9-]*$": {
+          "$ref": "#/$defs/client"
+        }
+      }
+    },
     "steps": {
       "$ref": "#/$defs/steps"
     }
@@ -354,10 +364,13 @@
         },
         "present": {
           "type": "boolean"
+        },
+        "holds": {
+          "$ref": "#/$defs/duration"
         }
       },
       "patternProperties": {
-        "^(?!(?:at|assert|geometry|role|absent|present)$)[a-z][a-z0-9-]*$": {
+        "^(?!(?:at|assert|geometry|role|absent|present|holds)$)[a-z][a-z0-9-]*$": {
           "$ref": "#/$defs/matcher"
         }
       },
@@ -373,6 +386,24 @@
           "$ref": "#/$defs/observation"
         }
       ]
+    },
+    "client": {
+      "type": "object",
+      "required": [
+        "open"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "open": {
+          "$ref": "#/$defs/name"
+        },
+        "isolation": {
+          "enum": [
+            "separate",
+            "shared"
+          ]
+        }
+      }
     },
     "step": {
       "oneOf": [
@@ -390,6 +421,9 @@
               "type": "boolean"
             },
             "id": {
+              "$ref": "#/$defs/name"
+            },
+            "as": {
               "$ref": "#/$defs/name"
             },
             "lead-in": {
@@ -480,6 +514,21 @@
                   "$ref": "#/$defs/steps"
                 },
                 "record.mask": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.multi": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.reload": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.duplicate": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.isolation.separate": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.isolation.shared": {
                   "$ref": "#/$defs/steps"
                 }
               }
@@ -519,6 +568,9 @@
             "id": {
               "$ref": "#/$defs/name"
             },
+            "as": {
+              "$ref": "#/$defs/name"
+            },
             "lead-in": {
               "$ref": "#/$defs/duration"
             },
@@ -607,6 +659,21 @@
                   "$ref": "#/$defs/steps"
                 },
                 "record.mask": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.multi": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.reload": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.duplicate": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.isolation.separate": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.isolation.shared": {
                   "$ref": "#/$defs/steps"
                 }
               }
@@ -648,6 +715,9 @@
             "id": {
               "$ref": "#/$defs/name"
             },
+            "as": {
+              "$ref": "#/$defs/name"
+            },
             "lead-in": {
               "$ref": "#/$defs/duration"
             },
@@ -736,6 +806,21 @@
                   "$ref": "#/$defs/steps"
                 },
                 "record.mask": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.multi": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.reload": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.duplicate": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.isolation.separate": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.isolation.shared": {
                   "$ref": "#/$defs/steps"
                 }
               }
@@ -792,6 +877,9 @@
             "id": {
               "$ref": "#/$defs/name"
             },
+            "as": {
+              "$ref": "#/$defs/name"
+            },
             "lead-in": {
               "$ref": "#/$defs/duration"
             },
@@ -880,6 +968,21 @@
                   "$ref": "#/$defs/steps"
                 },
                 "record.mask": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.multi": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.reload": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.duplicate": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.isolation.separate": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.isolation.shared": {
                   "$ref": "#/$defs/steps"
                 }
               }
@@ -936,136 +1039,7 @@
             "id": {
               "$ref": "#/$defs/name"
             },
-            "lead-in": {
-              "$ref": "#/$defs/duration"
-            },
-            "dwell": {
-              "$ref": "#/$defs/duration"
-            },
-            "chapter": {
-              "type": "string"
-            },
-            "narration": {
-              "$ref": "#/$defs/span"
-            },
-            "caption": {
-              "$ref": "#/$defs/span"
-            },
-            "callout": {
-              "oneOf": [
-                {
-                  "$ref": "#/$defs/callout"
-                },
-                {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/$defs/callout"
-                  }
-                }
-              ]
-            },
-            "alternatives": {
-              "type": "object",
-              "minProperties": 1,
-              "additionalProperties": false,
-              "properties": {
-                "input.key": {
-                  "$ref": "#/$defs/steps"
-                },
-                "input.chord": {
-                  "$ref": "#/$defs/steps"
-                },
-                "input.text": {
-                  "$ref": "#/$defs/steps"
-                },
-                "input.pointer.move": {
-                  "$ref": "#/$defs/steps"
-                },
-                "input.pointer.click": {
-                  "$ref": "#/$defs/steps"
-                },
-                "input.pointer.drag": {
-                  "$ref": "#/$defs/steps"
-                },
-                "input.wheel": {
-                  "$ref": "#/$defs/steps"
-                },
-                "input.hover": {
-                  "$ref": "#/$defs/steps"
-                },
-                "observe.text": {
-                  "$ref": "#/$defs/steps"
-                },
-                "observe.geometry": {
-                  "$ref": "#/$defs/steps"
-                },
-                "observe.style": {
-                  "$ref": "#/$defs/steps"
-                },
-                "observe.image": {
-                  "$ref": "#/$defs/steps"
-                },
-                "observe.focus": {
-                  "$ref": "#/$defs/steps"
-                },
-                "sync.event": {
-                  "$ref": "#/$defs/steps"
-                },
-                "sync.visual-settle": {
-                  "$ref": "#/$defs/steps"
-                },
-                "record.cast": {
-                  "$ref": "#/$defs/steps"
-                },
-                "record.video": {
-                  "$ref": "#/$defs/steps"
-                },
-                "record.still": {
-                  "$ref": "#/$defs/steps"
-                },
-                "record.mask": {
-                  "$ref": "#/$defs/steps"
-                }
-              }
-            }
-          }
-        },
-        {
-          "type": "object",
-          "required": [
-            "move"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "move": {
-              "oneOf": [
-                {
-                  "$ref": "#/$defs/locator"
-                },
-                {
-                  "type": "object",
-                  "required": [
-                    "at"
-                  ],
-                  "additionalProperties": false,
-                  "properties": {
-                    "at": {
-                      "$ref": "#/$defs/locator"
-                    },
-                    "anchor": {
-                      "$ref": "#/$defs/anchor"
-                    },
-                    "pace": {
-                      "$ref": "#/$defs/pace"
-                    }
-                  }
-                }
-              ]
-            },
-            "settle": {
-              "type": "boolean"
-            },
-            "id": {
+            "as": {
               "$ref": "#/$defs/name"
             },
             "lead-in": {
@@ -1156,6 +1130,171 @@
                   "$ref": "#/$defs/steps"
                 },
                 "record.mask": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.multi": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.reload": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.duplicate": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.isolation.separate": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.isolation.shared": {
+                  "$ref": "#/$defs/steps"
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "move"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "move": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/locator"
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "at"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "at": {
+                      "$ref": "#/$defs/locator"
+                    },
+                    "anchor": {
+                      "$ref": "#/$defs/anchor"
+                    },
+                    "pace": {
+                      "$ref": "#/$defs/pace"
+                    }
+                  }
+                }
+              ]
+            },
+            "settle": {
+              "type": "boolean"
+            },
+            "id": {
+              "$ref": "#/$defs/name"
+            },
+            "as": {
+              "$ref": "#/$defs/name"
+            },
+            "lead-in": {
+              "$ref": "#/$defs/duration"
+            },
+            "dwell": {
+              "$ref": "#/$defs/duration"
+            },
+            "chapter": {
+              "type": "string"
+            },
+            "narration": {
+              "$ref": "#/$defs/span"
+            },
+            "caption": {
+              "$ref": "#/$defs/span"
+            },
+            "callout": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/callout"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/callout"
+                  }
+                }
+              ]
+            },
+            "alternatives": {
+              "type": "object",
+              "minProperties": 1,
+              "additionalProperties": false,
+              "properties": {
+                "input.key": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.chord": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.text": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.pointer.move": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.pointer.click": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.pointer.drag": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.wheel": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.hover": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.text": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.geometry": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.style": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.image": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.focus": {
+                  "$ref": "#/$defs/steps"
+                },
+                "sync.event": {
+                  "$ref": "#/$defs/steps"
+                },
+                "sync.visual-settle": {
+                  "$ref": "#/$defs/steps"
+                },
+                "record.cast": {
+                  "$ref": "#/$defs/steps"
+                },
+                "record.video": {
+                  "$ref": "#/$defs/steps"
+                },
+                "record.still": {
+                  "$ref": "#/$defs/steps"
+                },
+                "record.mask": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.multi": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.reload": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.duplicate": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.isolation.separate": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.isolation.shared": {
                   "$ref": "#/$defs/steps"
                 }
               }
@@ -1203,6 +1342,9 @@
             "id": {
               "$ref": "#/$defs/name"
             },
+            "as": {
+              "$ref": "#/$defs/name"
+            },
             "lead-in": {
               "$ref": "#/$defs/duration"
             },
@@ -1291,6 +1433,21 @@
                   "$ref": "#/$defs/steps"
                 },
                 "record.mask": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.multi": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.reload": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.duplicate": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.isolation.separate": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.isolation.shared": {
                   "$ref": "#/$defs/steps"
                 }
               }
@@ -1346,6 +1503,9 @@
             "id": {
               "$ref": "#/$defs/name"
             },
+            "as": {
+              "$ref": "#/$defs/name"
+            },
             "lead-in": {
               "$ref": "#/$defs/duration"
             },
@@ -1434,6 +1594,21 @@
                   "$ref": "#/$defs/steps"
                 },
                 "record.mask": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.multi": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.reload": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.duplicate": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.isolation.separate": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.isolation.shared": {
                   "$ref": "#/$defs/steps"
                 }
               }
@@ -1484,6 +1659,9 @@
             "id": {
               "$ref": "#/$defs/name"
             },
+            "as": {
+              "$ref": "#/$defs/name"
+            },
             "lead-in": {
               "$ref": "#/$defs/duration"
             },
@@ -1572,6 +1750,21 @@
                   "$ref": "#/$defs/steps"
                 },
                 "record.mask": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.multi": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.reload": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.duplicate": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.isolation.separate": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.isolation.shared": {
                   "$ref": "#/$defs/steps"
                 }
               }
@@ -1619,111 +1812,7 @@
             "id": {
               "$ref": "#/$defs/name"
             },
-            "lead-in": {
-              "$ref": "#/$defs/duration"
-            },
-            "dwell": {
-              "$ref": "#/$defs/duration"
-            },
-            "chapter": {
-              "type": "string"
-            },
-            "narration": {
-              "$ref": "#/$defs/span"
-            },
-            "caption": {
-              "$ref": "#/$defs/span"
-            },
-            "callout": {
-              "oneOf": [
-                {
-                  "$ref": "#/$defs/callout"
-                },
-                {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/$defs/callout"
-                  }
-                }
-              ]
-            },
-            "alternatives": {
-              "type": "object",
-              "minProperties": 1,
-              "additionalProperties": false,
-              "properties": {
-                "input.key": {
-                  "$ref": "#/$defs/steps"
-                },
-                "input.chord": {
-                  "$ref": "#/$defs/steps"
-                },
-                "input.text": {
-                  "$ref": "#/$defs/steps"
-                },
-                "input.pointer.move": {
-                  "$ref": "#/$defs/steps"
-                },
-                "input.pointer.click": {
-                  "$ref": "#/$defs/steps"
-                },
-                "input.pointer.drag": {
-                  "$ref": "#/$defs/steps"
-                },
-                "input.wheel": {
-                  "$ref": "#/$defs/steps"
-                },
-                "input.hover": {
-                  "$ref": "#/$defs/steps"
-                },
-                "observe.text": {
-                  "$ref": "#/$defs/steps"
-                },
-                "observe.geometry": {
-                  "$ref": "#/$defs/steps"
-                },
-                "observe.style": {
-                  "$ref": "#/$defs/steps"
-                },
-                "observe.image": {
-                  "$ref": "#/$defs/steps"
-                },
-                "observe.focus": {
-                  "$ref": "#/$defs/steps"
-                },
-                "sync.event": {
-                  "$ref": "#/$defs/steps"
-                },
-                "sync.visual-settle": {
-                  "$ref": "#/$defs/steps"
-                },
-                "record.cast": {
-                  "$ref": "#/$defs/steps"
-                },
-                "record.video": {
-                  "$ref": "#/$defs/steps"
-                },
-                "record.still": {
-                  "$ref": "#/$defs/steps"
-                },
-                "record.mask": {
-                  "$ref": "#/$defs/steps"
-                }
-              }
-            }
-          }
-        },
-        {
-          "type": "object",
-          "required": [
-            "expect"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "expect": {
-              "$ref": "#/$defs/observation"
-            },
-            "id": {
+            "as": {
               "$ref": "#/$defs/name"
             },
             "lead-in": {
@@ -1814,6 +1903,146 @@
                   "$ref": "#/$defs/steps"
                 },
                 "record.mask": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.multi": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.reload": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.duplicate": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.isolation.separate": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.isolation.shared": {
+                  "$ref": "#/$defs/steps"
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "expect"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "expect": {
+              "$ref": "#/$defs/observation"
+            },
+            "id": {
+              "$ref": "#/$defs/name"
+            },
+            "as": {
+              "$ref": "#/$defs/name"
+            },
+            "lead-in": {
+              "$ref": "#/$defs/duration"
+            },
+            "dwell": {
+              "$ref": "#/$defs/duration"
+            },
+            "chapter": {
+              "type": "string"
+            },
+            "narration": {
+              "$ref": "#/$defs/span"
+            },
+            "caption": {
+              "$ref": "#/$defs/span"
+            },
+            "callout": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/callout"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/callout"
+                  }
+                }
+              ]
+            },
+            "alternatives": {
+              "type": "object",
+              "minProperties": 1,
+              "additionalProperties": false,
+              "properties": {
+                "input.key": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.chord": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.text": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.pointer.move": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.pointer.click": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.pointer.drag": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.wheel": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.hover": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.text": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.geometry": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.style": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.image": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.focus": {
+                  "$ref": "#/$defs/steps"
+                },
+                "sync.event": {
+                  "$ref": "#/$defs/steps"
+                },
+                "sync.visual-settle": {
+                  "$ref": "#/$defs/steps"
+                },
+                "record.cast": {
+                  "$ref": "#/$defs/steps"
+                },
+                "record.video": {
+                  "$ref": "#/$defs/steps"
+                },
+                "record.still": {
+                  "$ref": "#/$defs/steps"
+                },
+                "record.mask": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.multi": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.reload": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.duplicate": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.isolation.separate": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.isolation.shared": {
                   "$ref": "#/$defs/steps"
                 }
               }
@@ -1853,6 +2082,9 @@
             "id": {
               "$ref": "#/$defs/name"
             },
+            "as": {
+              "$ref": "#/$defs/name"
+            },
             "lead-in": {
               "$ref": "#/$defs/duration"
             },
@@ -1941,6 +2173,21 @@
                   "$ref": "#/$defs/steps"
                 },
                 "record.mask": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.multi": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.reload": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.duplicate": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.isolation.separate": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.isolation.shared": {
                   "$ref": "#/$defs/steps"
                 }
               }
@@ -1963,6 +2210,9 @@
             "id": {
               "$ref": "#/$defs/name"
             },
+            "as": {
+              "$ref": "#/$defs/name"
+            },
             "lead-in": {
               "$ref": "#/$defs/duration"
             },
@@ -2051,6 +2301,21 @@
                   "$ref": "#/$defs/steps"
                 },
                 "record.mask": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.multi": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.reload": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.duplicate": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.isolation.separate": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.isolation.shared": {
                   "$ref": "#/$defs/steps"
                 }
               }
@@ -2074,6 +2339,9 @@
             "id": {
               "$ref": "#/$defs/name"
             },
+            "as": {
+              "$ref": "#/$defs/name"
+            },
             "lead-in": {
               "$ref": "#/$defs/duration"
             },
@@ -2162,6 +2430,21 @@
                   "$ref": "#/$defs/steps"
                 },
                 "record.mask": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.multi": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.reload": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.duplicate": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.isolation.separate": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.isolation.shared": {
                   "$ref": "#/$defs/steps"
                 }
               }
@@ -2193,115 +2476,7 @@
             "id": {
               "$ref": "#/$defs/name"
             },
-            "lead-in": {
-              "$ref": "#/$defs/duration"
-            },
-            "dwell": {
-              "$ref": "#/$defs/duration"
-            },
-            "chapter": {
-              "type": "string"
-            },
-            "narration": {
-              "$ref": "#/$defs/span"
-            },
-            "caption": {
-              "$ref": "#/$defs/span"
-            },
-            "callout": {
-              "oneOf": [
-                {
-                  "$ref": "#/$defs/callout"
-                },
-                {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/$defs/callout"
-                  }
-                }
-              ]
-            },
-            "alternatives": {
-              "type": "object",
-              "minProperties": 1,
-              "additionalProperties": false,
-              "properties": {
-                "input.key": {
-                  "$ref": "#/$defs/steps"
-                },
-                "input.chord": {
-                  "$ref": "#/$defs/steps"
-                },
-                "input.text": {
-                  "$ref": "#/$defs/steps"
-                },
-                "input.pointer.move": {
-                  "$ref": "#/$defs/steps"
-                },
-                "input.pointer.click": {
-                  "$ref": "#/$defs/steps"
-                },
-                "input.pointer.drag": {
-                  "$ref": "#/$defs/steps"
-                },
-                "input.wheel": {
-                  "$ref": "#/$defs/steps"
-                },
-                "input.hover": {
-                  "$ref": "#/$defs/steps"
-                },
-                "observe.text": {
-                  "$ref": "#/$defs/steps"
-                },
-                "observe.geometry": {
-                  "$ref": "#/$defs/steps"
-                },
-                "observe.style": {
-                  "$ref": "#/$defs/steps"
-                },
-                "observe.image": {
-                  "$ref": "#/$defs/steps"
-                },
-                "observe.focus": {
-                  "$ref": "#/$defs/steps"
-                },
-                "sync.event": {
-                  "$ref": "#/$defs/steps"
-                },
-                "sync.visual-settle": {
-                  "$ref": "#/$defs/steps"
-                },
-                "record.cast": {
-                  "$ref": "#/$defs/steps"
-                },
-                "record.video": {
-                  "$ref": "#/$defs/steps"
-                },
-                "record.still": {
-                  "$ref": "#/$defs/steps"
-                },
-                "record.mask": {
-                  "$ref": "#/$defs/steps"
-                }
-              }
-            }
-          }
-        },
-        {
-          "type": "object",
-          "required": [
-            "ext"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "ext": {
-              "type": "string",
-              "pattern": "^[a-z][a-z0-9-]*\\.[a-z][a-z0-9-]*(?:\\.[a-z][a-z0-9-]*)*$"
-            },
-            "with": {
-              "type": "object"
-            },
-            "id": {
+            "as": {
               "$ref": "#/$defs/name"
             },
             "lead-in": {
@@ -2392,6 +2567,682 @@
                   "$ref": "#/$defs/steps"
                 },
                 "record.mask": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.multi": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.reload": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.duplicate": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.isolation.separate": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.isolation.shared": {
+                  "$ref": "#/$defs/steps"
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "ext"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "ext": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9-]*\\.[a-z][a-z0-9-]*(?:\\.[a-z][a-z0-9-]*)*$"
+            },
+            "with": {
+              "type": "object"
+            },
+            "id": {
+              "$ref": "#/$defs/name"
+            },
+            "as": {
+              "$ref": "#/$defs/name"
+            },
+            "lead-in": {
+              "$ref": "#/$defs/duration"
+            },
+            "dwell": {
+              "$ref": "#/$defs/duration"
+            },
+            "chapter": {
+              "type": "string"
+            },
+            "narration": {
+              "$ref": "#/$defs/span"
+            },
+            "caption": {
+              "$ref": "#/$defs/span"
+            },
+            "callout": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/callout"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/callout"
+                  }
+                }
+              ]
+            },
+            "alternatives": {
+              "type": "object",
+              "minProperties": 1,
+              "additionalProperties": false,
+              "properties": {
+                "input.key": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.chord": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.text": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.pointer.move": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.pointer.click": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.pointer.drag": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.wheel": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.hover": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.text": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.geometry": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.style": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.image": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.focus": {
+                  "$ref": "#/$defs/steps"
+                },
+                "sync.event": {
+                  "$ref": "#/$defs/steps"
+                },
+                "sync.visual-settle": {
+                  "$ref": "#/$defs/steps"
+                },
+                "record.cast": {
+                  "$ref": "#/$defs/steps"
+                },
+                "record.video": {
+                  "$ref": "#/$defs/steps"
+                },
+                "record.still": {
+                  "$ref": "#/$defs/steps"
+                },
+                "record.mask": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.multi": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.reload": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.duplicate": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.isolation.separate": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.isolation.shared": {
+                  "$ref": "#/$defs/steps"
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "open-client"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "open-client": {
+              "type": "object",
+              "required": [
+                "name",
+                "open"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "name": {
+                  "$ref": "#/$defs/name"
+                },
+                "open": {
+                  "$ref": "#/$defs/name"
+                },
+                "isolation": {
+                  "enum": [
+                    "separate",
+                    "shared"
+                  ]
+                }
+              }
+            },
+            "id": {
+              "$ref": "#/$defs/name"
+            },
+            "as": {
+              "$ref": "#/$defs/name"
+            },
+            "lead-in": {
+              "$ref": "#/$defs/duration"
+            },
+            "dwell": {
+              "$ref": "#/$defs/duration"
+            },
+            "chapter": {
+              "type": "string"
+            },
+            "narration": {
+              "$ref": "#/$defs/span"
+            },
+            "caption": {
+              "$ref": "#/$defs/span"
+            },
+            "callout": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/callout"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/callout"
+                  }
+                }
+              ]
+            },
+            "alternatives": {
+              "type": "object",
+              "minProperties": 1,
+              "additionalProperties": false,
+              "properties": {
+                "input.key": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.chord": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.text": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.pointer.move": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.pointer.click": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.pointer.drag": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.wheel": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.hover": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.text": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.geometry": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.style": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.image": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.focus": {
+                  "$ref": "#/$defs/steps"
+                },
+                "sync.event": {
+                  "$ref": "#/$defs/steps"
+                },
+                "sync.visual-settle": {
+                  "$ref": "#/$defs/steps"
+                },
+                "record.cast": {
+                  "$ref": "#/$defs/steps"
+                },
+                "record.video": {
+                  "$ref": "#/$defs/steps"
+                },
+                "record.still": {
+                  "$ref": "#/$defs/steps"
+                },
+                "record.mask": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.multi": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.reload": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.duplicate": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.isolation.separate": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.isolation.shared": {
+                  "$ref": "#/$defs/steps"
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "reload"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "reload": {
+              "$ref": "#/$defs/name"
+            },
+            "id": {
+              "$ref": "#/$defs/name"
+            },
+            "as": {
+              "$ref": "#/$defs/name"
+            },
+            "lead-in": {
+              "$ref": "#/$defs/duration"
+            },
+            "dwell": {
+              "$ref": "#/$defs/duration"
+            },
+            "chapter": {
+              "type": "string"
+            },
+            "narration": {
+              "$ref": "#/$defs/span"
+            },
+            "caption": {
+              "$ref": "#/$defs/span"
+            },
+            "callout": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/callout"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/callout"
+                  }
+                }
+              ]
+            },
+            "alternatives": {
+              "type": "object",
+              "minProperties": 1,
+              "additionalProperties": false,
+              "properties": {
+                "input.key": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.chord": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.text": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.pointer.move": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.pointer.click": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.pointer.drag": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.wheel": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.hover": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.text": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.geometry": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.style": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.image": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.focus": {
+                  "$ref": "#/$defs/steps"
+                },
+                "sync.event": {
+                  "$ref": "#/$defs/steps"
+                },
+                "sync.visual-settle": {
+                  "$ref": "#/$defs/steps"
+                },
+                "record.cast": {
+                  "$ref": "#/$defs/steps"
+                },
+                "record.video": {
+                  "$ref": "#/$defs/steps"
+                },
+                "record.still": {
+                  "$ref": "#/$defs/steps"
+                },
+                "record.mask": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.multi": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.reload": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.duplicate": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.isolation.separate": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.isolation.shared": {
+                  "$ref": "#/$defs/steps"
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "duplicate"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "duplicate": {
+              "type": "object",
+              "required": [
+                "client",
+                "name"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "client": {
+                  "$ref": "#/$defs/name"
+                },
+                "name": {
+                  "$ref": "#/$defs/name"
+                }
+              }
+            },
+            "id": {
+              "$ref": "#/$defs/name"
+            },
+            "as": {
+              "$ref": "#/$defs/name"
+            },
+            "lead-in": {
+              "$ref": "#/$defs/duration"
+            },
+            "dwell": {
+              "$ref": "#/$defs/duration"
+            },
+            "chapter": {
+              "type": "string"
+            },
+            "narration": {
+              "$ref": "#/$defs/span"
+            },
+            "caption": {
+              "$ref": "#/$defs/span"
+            },
+            "callout": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/callout"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/callout"
+                  }
+                }
+              ]
+            },
+            "alternatives": {
+              "type": "object",
+              "minProperties": 1,
+              "additionalProperties": false,
+              "properties": {
+                "input.key": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.chord": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.text": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.pointer.move": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.pointer.click": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.pointer.drag": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.wheel": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.hover": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.text": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.geometry": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.style": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.image": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.focus": {
+                  "$ref": "#/$defs/steps"
+                },
+                "sync.event": {
+                  "$ref": "#/$defs/steps"
+                },
+                "sync.visual-settle": {
+                  "$ref": "#/$defs/steps"
+                },
+                "record.cast": {
+                  "$ref": "#/$defs/steps"
+                },
+                "record.video": {
+                  "$ref": "#/$defs/steps"
+                },
+                "record.still": {
+                  "$ref": "#/$defs/steps"
+                },
+                "record.mask": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.multi": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.reload": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.duplicate": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.isolation.separate": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.isolation.shared": {
+                  "$ref": "#/$defs/steps"
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "close-client"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "close-client": {
+              "$ref": "#/$defs/name"
+            },
+            "id": {
+              "$ref": "#/$defs/name"
+            },
+            "as": {
+              "$ref": "#/$defs/name"
+            },
+            "lead-in": {
+              "$ref": "#/$defs/duration"
+            },
+            "dwell": {
+              "$ref": "#/$defs/duration"
+            },
+            "chapter": {
+              "type": "string"
+            },
+            "narration": {
+              "$ref": "#/$defs/span"
+            },
+            "caption": {
+              "$ref": "#/$defs/span"
+            },
+            "callout": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/callout"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/callout"
+                  }
+                }
+              ]
+            },
+            "alternatives": {
+              "type": "object",
+              "minProperties": 1,
+              "additionalProperties": false,
+              "properties": {
+                "input.key": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.chord": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.text": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.pointer.move": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.pointer.click": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.pointer.drag": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.wheel": {
+                  "$ref": "#/$defs/steps"
+                },
+                "input.hover": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.text": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.geometry": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.style": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.image": {
+                  "$ref": "#/$defs/steps"
+                },
+                "observe.focus": {
+                  "$ref": "#/$defs/steps"
+                },
+                "sync.event": {
+                  "$ref": "#/$defs/steps"
+                },
+                "sync.visual-settle": {
+                  "$ref": "#/$defs/steps"
+                },
+                "record.cast": {
+                  "$ref": "#/$defs/steps"
+                },
+                "record.video": {
+                  "$ref": "#/$defs/steps"
+                },
+                "record.still": {
+                  "$ref": "#/$defs/steps"
+                },
+                "record.mask": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.multi": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.reload": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.duplicate": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.isolation.separate": {
+                  "$ref": "#/$defs/steps"
+                },
+                "client.isolation.shared": {
                   "$ref": "#/$defs/steps"
                 }
               }

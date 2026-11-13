@@ -294,7 +294,7 @@ proc cmdLane(args: seq[string]; builtins: Table[string, BackendFactory]) =
   # application on a loaded machine needs longer than the default.
   let settleTimeoutMs = lane{"settle-timeout"}.getInt(0)
   # How long one stage call may take: a stage that records a program or
-  # launches an editor can outlast the default on a loaded machine.
+  # starts a large application can outlast the default on a loaded machine.
   let stageTimeoutMs = lane{"stage-timeout"}.getInt(0)
   var retention = DefaultRetention
   if lane{"retention"} != nil and lane["retention"].kind == JObject:

@@ -162,6 +162,10 @@ proc spawnJsonLinesBackend*(command: string; args: seq[string] = @[]; workDir = 
     var a = (if args == nil: newJObject() else: args.copy)
     a["op"] = %($op)
     c.call("record", a, 120_000)
+  result.client = proc (op: string; args: JsonNode) =
+    var a = (if args == nil: newJObject() else: args.copy)
+    a["op"] = %op
+    discard c.call("client", a, 120_000)
   result.hit = proc (x, y: float): Option[string] =
     let j = c.call("hit", %*{"x": x, "y": y})
     if j{"locator"}.kind == JString: some(j["locator"].getStr) else: none(string)
@@ -216,6 +220,12 @@ proc dispatch*(b: Backend; req: JsonNode): JsonNode =
       let op = parseEnum[RecordOp](req{"op"}.getStr)
       res = b.record(op, req)
       if res == nil: res = newJObject()
+    of "client":
+      if b.client == nil:
+        return errorResponse(id, beUnsupported, "this backend has one client")
+      var args = req.copy
+      for k in ["id", "call", "op"]: args.delete(k)
+      b.client(req{"op"}.getStr, args)
     of "hit":
       let r = b.hit(req{"x"}.getFloat, req{"y"}.getFloat)
       res["locator"] = (if r.isSome: %r.get else: newJNull())

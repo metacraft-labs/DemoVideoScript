@@ -1,0 +1,44 @@
+scenario: 1
+name: runner/two-clients
+pack: notes-app
+summary: >-
+  Two windows of the notes application: archiving in one leaves the other's
+  list as it was, for the whole span read; a reload starts a window again; a
+  window can be closed while the other goes on.
+
+stage:
+  - use: seed-notes
+    with: { fixture: ../../conformance/fixtures/three-notes.json }
+  - use: launch-app
+
+clients:
+  a: { open: stage }
+  b: { open: notes-window, isolation: separate }
+
+steps:
+  - expect: { at: note-list, count: 3 }
+    as: a
+  - expect: { at: note-list, count: 3 }
+    as: b
+  - beat: archive-in-a
+    as: a
+    steps:
+      - click: 'note-list/note[title="Groceries"]'
+      - chord: { bound: "notes.archive-selected" }
+      - wait: { until: "note-list.loaded" }
+      - expect: { at: note-list, count: 2 }
+  - expect: { at: note-list, count: 3, holds: 300ms }
+    as: b
+  - expect: { at: 'note-list/note[title="Groceries"]', absent: true }
+    as: a
+  - duplicate: { client: b, name: c }
+  - expect: { at: note-list, count: 3 }
+    as: c
+  - reload: a
+  - expect: { at: note-list, count: 3 }
+    as: a
+  - close-client: b
+  - key: Down
+    as: a
+  - expect: { at: note-list, count: 3 }
+    as: c

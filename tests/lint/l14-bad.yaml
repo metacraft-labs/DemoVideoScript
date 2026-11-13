@@ -1,0 +1,16 @@
+# expect: L14:10 L14:13 L14:14 L14:16
+scenario: 1
+name: lint/l14-bad
+pack: notes-app
+stage:
+  - use: launch-app
+clients:
+  a: { open: stage }
+steps:
+  - key: Enter
+    as: b
+  - close-client: a
+  - reload: a
+  - duplicate: { client: a, name: c }
+  - open-client: { name: d, open: notes-window }
+  - open-client: { name: d, open: notes-window }

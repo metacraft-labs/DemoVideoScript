@@ -1,0 +1,4 @@
+scenario: 1
+name: schema/duplicate-no-name
+steps:
+  - duplicate: { client: a }

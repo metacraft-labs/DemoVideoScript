@@ -1,0 +1,14 @@
+scenario: 1
+name: schema/clients
+clients:
+  a: { open: stage }
+  b: { open: notes-window, isolation: separate }
+steps:
+  - key: Enter
+    as: a
+  - expect: { at: note-list, count: 3, holds: 1.5s }
+    as: b
+  - reload: b
+  - duplicate: { client: a, name: c }
+  - open-client: { name: d, open: notes-window, isolation: shared }
+  - close-client: c

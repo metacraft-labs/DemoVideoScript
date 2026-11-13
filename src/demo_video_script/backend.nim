@@ -76,6 +76,13 @@ type
       ## A named sync condition (`settled`, a pack condition, or a role's
       ## condition on `instance`). False when the deadline passed.
     record*: proc (op: RecordOp; args: JsonNode): JsonNode {.closure.}
+    client*: proc (op: string; args: JsonNode) {.closure.}
+      ## A client of the application as a whole (Proposal-Multiple-Clients.md):
+      ## `adopt` names the client the stage opened, `open` opens one more
+      ## ({name, open, isolation}), `select` addresses the calls that follow to
+      ## one ({name}), `reload`, `duplicate` ({name, from}) and `close`. Instance
+      ## ids are a client's own; after a `select` the runner locates again.
+      ## nil for a backend with one client (no `client.*` capability).
     hit*: proc (x, y: float): Option[string] {.closure.}
       ## The deepest role instance at a point, as a locator (tooling only).
     close*: proc () {.closure.}

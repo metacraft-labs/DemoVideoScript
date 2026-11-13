@@ -42,11 +42,13 @@ CAPABILITIES = [
     "observe.text", "observe.geometry", "observe.style", "observe.image", "observe.focus",
     "sync.event", "sync.visual-settle",
     "record.cast", "record.video", "record.still", "record.mask",
+    "client.multi", "client.reload", "client.duplicate",
+    "client.isolation.separate", "client.isolation.shared",
 ]
 AFFORDANCES = ["click", "double-click", "context-click", "drag-source", "drop-target",
                "wheel", "text-entry", "focusable"]
 PACE_PRESETS = ["texting", "quick", "thoughtful", "careful"]
-RESERVED_OBS = ["at", "assert", "geometry", "role", "absent", "present"]
+RESERVED_OBS = ["at", "assert", "geometry", "role", "absent", "present", "holds"]
 RELATIONS = ["above", "below", "left-of", "right-of", "inside", "overlaps", "aligned-left",
              "aligned-top", "spans-width-of", "spans-height-of"]
 
@@ -124,6 +126,7 @@ def scenario_schema():
             "role": {"$ref": "#/$defs/name"},
             "absent": {"type": "boolean"},
             "present": {"type": "boolean"},
+            "holds": {"$ref": "#/$defs/duration"},
         },
         "patternProperties": {f"^(?!(?:{'|'.join(RESERVED_OBS)})$){NAME}$": {"$ref": "#/$defs/matcher"}},
         "additionalProperties": False,
@@ -132,6 +135,7 @@ def scenario_schema():
 
     annotations = {
         "id": {"$ref": "#/$defs/name"},
+        "as": {"$ref": "#/$defs/name"},
         "lead-in": {"$ref": "#/$defs/duration"},
         "dwell": {"$ref": "#/$defs/duration"},
         "chapter": {"type": "string"},
@@ -198,6 +202,15 @@ def scenario_schema():
         "name": {"$ref": "#/$defs/name"}, "of": {"$ref": "#/$defs/locator"}}), **annotations}))
     variants.append(obj(["ext"], {"ext": {"type": "string", "pattern": rf"^{NAME}\.{NAME}(?:\.{NAME})*$"},
                                   "with": {"type": "object"}, **annotations}))
+    isolation = {"enum": ["separate", "shared"]}
+    variants.append(obj(["open-client"], {"open-client": obj(["name", "open"], {
+        "name": {"$ref": "#/$defs/name"}, "open": {"$ref": "#/$defs/name"},
+        "isolation": isolation}), **annotations}))
+    variants.append(obj(["reload"], {"reload": {"$ref": "#/$defs/name"}, **annotations}))
+    variants.append(obj(["duplicate"], {"duplicate": obj(["client", "name"], {
+        "client": {"$ref": "#/$defs/name"}, "name": {"$ref": "#/$defs/name"}}), **annotations}))
+    variants.append(obj(["close-client"], {"close-client": {"$ref": "#/$defs/name"}, **annotations}))
+    d["client"] = obj(["open"], {"open": {"$ref": "#/$defs/name"}, "isolation": isolation})
     d["step"] = {"oneOf": variants}
     d["steps"] = {"type": "array", "items": {"$ref": "#/$defs/step"}}
     d["stageCall"] = obj(["use"], {"use": {"$ref": "#/$defs/name"}, "with": {"type": "object"}})
@@ -215,6 +228,8 @@ def scenario_schema():
             "summary": {"type": "string"},
             "requires": {"type": "array", "uniqueItems": True, "items": {"$ref": "#/$defs/name"}},
             "stage": {"type": "array", "items": {"$ref": "#/$defs/stageCall"}},
+            "clients": {"type": "object", "minProperties": 1, "additionalProperties": False,
+                        "patternProperties": {f"^{NAME}$": {"$ref": "#/$defs/client"}}},
             "steps": {"$ref": "#/$defs/steps"},
         },
         "$defs": d,
@@ -268,6 +283,13 @@ def pack_schema():
                       "$comment": "flow bodies are checked after parameter substitution (lint L11)",
                       "patternProperties": {SIG: {"type": "array",
                                                   "items": {"type": "object"}}}},
+            "clients": {"type": "object", "additionalProperties": False,
+                        "$comment": "client kinds a scenario can open; opened: the condition "
+                                    "that means one finished opening",
+                        "patternProperties": {f"^{NAME}$": {"oneOf": [
+                            {"type": "object", "additionalProperties": False,
+                             "properties": {"opened": {"type": "string", "pattern": SYNC}}},
+                            {"type": "null"}]}}},
             "stages": {"type": "object", "additionalProperties": False,
                        "patternProperties": {f"^{NAME}$": {"oneOf": [{"$ref": "#/$defs/stage"},
                                                                      {"type": "null"}]}}},
@@ -345,6 +367,17 @@ def protocol_schema():
                                             "(declared volatile regions)"}},
             ["op"]),
         req("hit", {"x": {"type": "number"}, "y": {"type": "number"}}, ["x", "y"]),
+        req("client", {"op": {"enum": ["adopt", "open", "select", "reload", "duplicate", "close"],
+                              "$comment": "a client of the application as a whole "
+                                          "(Proposal-Multiple-Clients.md); select addresses "
+                                          "the calls that follow"},
+                       "name": {"type": "string", "pattern": f"^{NAME}$"},
+                       "open": {"type": "string", "pattern": f"^{NAME}$",
+                                "$comment": "open: the pack's client kind"},
+                       "isolation": {"enum": ["separate", "shared"]},
+                       "from": {"type": "string", "pattern": f"^{NAME}$",
+                                "$comment": "duplicate: the client duplicated"}},
+            ["op", "name"]),
         req("shutdown", {}),
     ]
     ok = lambda props, required=(): {
@@ -384,7 +417,7 @@ def protocol_schema():
         "$id": BASE + "backend-protocol.schema.json",
         "title": "DemoVideoScript backend protocol, version 1 (JSON lines)",
         "$comment": "A response answers the request with the same id: response-<call> "
-                    "(response-empty for stage, end-stage, send, shutdown) or response-error.",
+                    "(response-empty for stage, end-stage, send, client, shutdown) or response-error.",
         "$defs": {**d, **rdefs,
                   "request": {"oneOf": requests},
                   "response": {"anyOf": [{"$ref": f"#/$defs/{k}"} for k in rdefs]}},

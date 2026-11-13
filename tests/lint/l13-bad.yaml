@@ -1,0 +1,18 @@
+# expect: L13:13 L13:18
+scenario: 1
+name: lint/l13-bad
+pack: notes-app
+stage:
+  - use: launch-app
+clients:
+  a: { open: stage }
+  b: { open: notes-window }
+steps:
+  - click: search-field
+    as: a
+  - expect: { at: note-list, count: 3 }
+  - beat: both
+    as: b
+    steps:
+      - expect: { at: note-list, count: 3 }
+  - key: Enter

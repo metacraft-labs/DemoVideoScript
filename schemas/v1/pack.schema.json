@@ -49,6 +49,30 @@
         }
       }
     },
+    "clients": {
+      "type": "object",
+      "additionalProperties": false,
+      "$comment": "client kinds a scenario can open; opened: the condition that means one finished opening",
+      "patternProperties": {
+        "^[a-z][a-z0-9-]*$": {
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "opened": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9-]*(?:\\.[a-z][a-z0-9-]*)*$"
+                }
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
     "stages": {
       "type": "object",
       "additionalProperties": false,
