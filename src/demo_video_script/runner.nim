@@ -300,7 +300,7 @@ proc childValues(r: var Run; instance: string; need: Table[string, seq[string]])
 
 proc tolerance(r: Run): float = (if r.hello.units == "cell": 0.0 else: 2.0)
 
-proc checkObservation(r: var Run; o: Observation; observed: var JsonNode): string =
+proc checkObservationOnce(r: var Run; o: Observation; observed: var JsonNode): string =
   ## "" when the observation holds, otherwise why not.
   observed = newJObject()
   let lr = r.b.locate(locatorJson(o.target.at))
@@ -358,6 +358,23 @@ proc checkObservation(r: var Run; o: Observation; observed: var JsonNode): strin
     if not evalAssertion(decl, inv.args, selfVals, kids):
       return "'" & $o.target.at & "' does not satisfy " & $inv & " (" & decl.text & ")"
   ""
+
+const RelocateAttempts = 5
+  ## How often an observation locates its target again when the instance it
+  ## located is gone before it was read.
+
+proc checkObservation(r: var Run; o: Observation; observed: var JsonNode): string =
+  ## The observation, located afresh when the window redrew between the
+  ## locate and the read: a backend reads a fresh surface for every read, and
+  ## a pane that re-laid itself out in between leaves the instance it handed
+  ## out gone (`not-found`). That is the window changing, not the scenario
+  ## failing; the target is located again, a few times, before it counts.
+  for attempt in 1 .. RelocateAttempts:
+    try:
+      return r.checkObservationOnce(o, observed)
+    except BackendError as e:
+      if e.kind != beNotFound or attempt == RelocateAttempts: raise
+      sleep(25)
 
 # --- input ------------------------------------------------------------------------------
 
@@ -510,8 +527,12 @@ proc waitStep(r: var Run; s: Step; observed: var JsonNode) =
             var selfNeed: seq[string]
             var childNeed: Table[string, seq[string]]
             propertiesUsed(decl.pred, selfNeed, childNeed)
-            let selfVals = (if selfNeed.len > 0: r.readProps(lr.instance, selfNeed) else: newJObject())
-            if evalSyncPredicate(decl.pred, selfVals, r.childValues(lr.instance, childNeed)): return
+            try:
+              let selfVals = (if selfNeed.len > 0: r.readProps(lr.instance, selfNeed) else: newJObject())
+              if evalSyncPredicate(decl.pred, selfVals, r.childValues(lr.instance, childNeed)): return
+            except BackendError as e:
+              # the window redrew between the locate and the read: not yet
+              if e.kind != beNotFound: raise
           if r.ms > deadline: fail("'" & name & "' did not hold within " & $timeout & " ms")
           sleep(25)
     if not r.b.await(name, "", timeout):

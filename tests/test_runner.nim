@@ -181,6 +181,18 @@ suite "the runner on the reference backend":
     check "count is 3" in s["message"].getStr
     check r["steps"][1]["status"].getStr == "not-run"
 
+  test "a window that redraws between a locate and a read: located again, not failed":
+    # refapp-churning answers the first read after every input with
+    # not-found, as a pane that re-laid itself out does; the observation
+    # locates its target again. A wait that never holds still fails as one.
+    for f in toSeq(walkFiles(root / "conformance/scenarios/*.yaml")):
+      let r = runJson(f, "refapp-churning")
+      checkpoint f & ": " & $r["steps"]
+      check r["outcome"].getStr == "passed"
+    let w = runJson(root / "tests/runner/wait-timeout.yaml", "refapp-churning")
+    check w["outcome"].getStr == "failed"
+    check "never held" in w["steps"][0]["message"].getStr
+
   test "a chord bound to nothing fails; it never falls back to invoking the operation":
     let r = runJson(root / "tests/runner/chord-unbound.yaml", "refapp")
     check r["outcome"].getStr == "failed"

@@ -34,6 +34,8 @@ type
     realistic: bool
     t0: MonoTime
     without: seq[string]           ## capabilities withheld (to qualify `unsupported`)
+    churning: bool                 ## the window redraws between a locate and a read
+    redrawPending: bool            ## churning: the next read finds its instance gone
     clockAt: string                ## set-clock: the time the application shows
     rec: tuple[on, deterministic: bool, dir: string, t0: MonoTime, events: seq[JsonNode]]
       ## the cast being recorded: the screen at every step
@@ -497,8 +499,15 @@ proc clientOp(st: RefappState; op: string; args: JsonNode) =
     st.ids.clear()
   else: raise backendError(beProtocol, "unknown client op '" & op & "'")
 
-proc newRefappBackend*(defect: PlantedDefect = dfNone; without: seq[string] = @[]): Backend =
-  let st = RefappState(defect: defect, t0: getMonoTime(), without: without)
+proc newRefappBackend*(defect: PlantedDefect = dfNone; without: seq[string] = @[];
+                       churning = false): Backend =
+  ## `churning`: not a defect. A real window can redraw between the runner's
+  ## locate and its read (a pane that re-lays itself out after an input, or
+  ## while a build runs), and the instance it located is then gone. The
+  ## churning backend answers the first read after the launch and after every
+  ## input so, as such a window can; a correct runner locates again.
+  let st = RefappState(defect: defect, t0: getMonoTime(), without: without,
+                       churning: churning, redrawPending: churning)
   result = Backend()
   result.hello = proc (): Hello =
     var caps: seq[string]
@@ -538,8 +547,13 @@ proc newRefappBackend*(defect: PlantedDefect = dfNone; without: seq[string] = @[
     if st.app.keymap.hasKey(operation): some(st.app.keymap[operation]) else: none(string)
   result.locate = proc (locator: JsonNode): LocateResult = st.locateIn(locator)
   result.read = proc (instance: string; properties: seq[string]): JsonNode =
+    if st.churning and st.redrawPending:
+      st.redrawPending = false
+      raise backendError(beNotFound, "instance " & instance & " is gone (the window redrew)")
     st.readIn(instance, properties)
-  result.send = proc (action: JsonNode) = st.sendAction(action)
+  result.send = proc (action: JsonNode) =
+    st.sendAction(action)
+    if st.churning: st.redrawPending = true
   result.await = proc (condition, instance: string; timeoutMs: int): bool =
     st.awaitCond(condition, timeoutMs)
   result.record = proc (op: RecordOp; args: JsonNode): JsonNode =
