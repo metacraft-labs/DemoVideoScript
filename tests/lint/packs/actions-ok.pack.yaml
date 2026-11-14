@@ -1,0 +1,11 @@
+# expect:
+pack: 1
+name: notes-app
+root: window
+roles:
+  window:
+    properties: { title: text }
+actions:
+  write-file:
+    summary: Another program writes a file of the project; the application is not told.
+    params: { file: text, content: text }

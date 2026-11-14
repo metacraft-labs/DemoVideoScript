@@ -45,7 +45,8 @@ const Capabilities = ["input.key", "input.chord", "input.text", "input.pointer.m
                       "observe.text", "observe.geometry", "observe.focus", "sync.event",
                       "record.still", "record.cast", "record.mask",
                       "client.multi", "client.reload", "client.duplicate",
-                      "client.isolation.separate", "client.isolation.shared"]
+                      "client.isolation.separate", "client.isolation.shared",
+                      "act"]
 
 proc nowMs(st: RefappState): int64 = (getMonoTime() - st.t0).inMilliseconds
 
@@ -576,4 +577,13 @@ proc newRefappBackend*(defect: PlantedDefect = dfNone; without: seq[string] = @[
   result.hit = proc (x, y: float): Option[string] = st.hitAt(x, y)
   if "client.multi" notin without:
     result.client = proc (op: string; args: JsonNode) = st.clientOp(op, args)
+  if "act" notin without:
+    # actions (Proposal-Outside-Actions.md): another program writes a file
+    result.act = proc (use: string; args: JsonNode) =
+      case use
+      of "write-file":
+        let path = args{"path"}.getStr
+        if path.len == 0: raise backendError(beRefused, "write-file: no path")
+        writeFile(path, args{"content"}.getStr)
+      else: raise backendError(beRefused, "no action '" & use & "'")
   result.close = proc () = discard

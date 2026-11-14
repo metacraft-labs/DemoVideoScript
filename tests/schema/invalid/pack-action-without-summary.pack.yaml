@@ -1,0 +1,12 @@
+pack: 1
+name: notes-app
+root: window
+roles:
+  window:
+    properties: { title: text }
+actions:
+  no-summary:
+    params: { file: text }
+  empty-summary:
+    summary: ""
+    params: { file: text }

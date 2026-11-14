@@ -15,7 +15,7 @@ from pathlib import Path
 
 NAME = r"[a-z][a-z0-9-]*"
 NAMED_KEYS = ["Enter","Esc","Tab","Backspace","Delete","Insert","Home","End","PageUp","PageDown",
-              "Up","Down","Left","Right","Space","Plus","Ctrl","Shift","Alt","Meta","Mod"] + [f"F{i}" for i in range(24,0,-1)]
+              "Up","Down","Left","Right","Space","Plus","Menu","Ctrl","Shift","Alt","Meta","Mod"] + [f"F{i}" for i in range(24,0,-1)]
 KEY = "(?:" + "|".join(NAMED_KEYS) + r"|[^\x00-\x20\x7f+])"
 MOD = r"(?:Ctrl|Shift|Alt|Meta|Mod)"
 CHORD1 = f"(?:{MOD}\\+)*{KEY}"
@@ -43,7 +43,7 @@ CAPABILITIES = [
     "sync.event", "sync.visual-settle",
     "record.cast", "record.video", "record.still", "record.mask",
     "client.multi", "client.reload", "client.duplicate",
-    "client.isolation.separate", "client.isolation.shared",
+    "client.isolation.separate", "client.isolation.shared", "act",
 ]
 AFFORDANCES = ["click", "double-click", "context-click", "drag-source", "drop-target",
                "wheel", "text-entry", "focusable"]
@@ -210,6 +210,8 @@ def scenario_schema():
     variants.append(obj(["duplicate"], {"duplicate": obj(["client", "name"], {
         "client": {"$ref": "#/$defs/name"}, "name": {"$ref": "#/$defs/name"}}), **annotations}))
     variants.append(obj(["close-client"], {"close-client": {"$ref": "#/$defs/name"}, **annotations}))
+    variants.append(obj(["act"], {"act": obj(["use"], {
+        "use": {"$ref": "#/$defs/name"}, "with": {"type": "object"}}), **annotations}))
     d["client"] = obj(["open"], {"open": {"$ref": "#/$defs/name"}, "isolation": isolation})
     d["step"] = {"oneOf": variants}
     d["steps"] = {"type": "array", "items": {"$ref": "#/$defs/step"}}
@@ -264,6 +266,10 @@ def pack_schema():
                   "properties": {"params": {"type": "object", "additionalProperties": False,
                                             "patternProperties": {f"^{NAME}$": {"$ref": "#/$defs/type"}}},
                                  "summary": {"type": "string"}}}
+    d["action"] = {"type": "object", "additionalProperties": False, "required": ["summary"],
+                   "properties": {"params": {"type": "object", "additionalProperties": False,
+                                             "patternProperties": {f"^{NAME}$": {"$ref": "#/$defs/type"}}},
+                                  "summary": {"type": "string", "minLength": 1}}}
     return {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
         "$id": BASE + "pack.schema.json",
@@ -293,6 +299,10 @@ def pack_schema():
             "stages": {"type": "object", "additionalProperties": False,
                        "patternProperties": {f"^{NAME}$": {"oneOf": [{"$ref": "#/$defs/stage"},
                                                                      {"type": "null"}]}}},
+            "actions": {"type": "object", "additionalProperties": False,
+                        "$comment": "changes outside the application a step may make "
+                                    "(Proposal-Outside-Actions.md); the summary says what",
+                        "patternProperties": {f"^{NAME}$": {"$ref": "#/$defs/action"}}},
         },
         "$defs": d,
     }
@@ -367,6 +377,11 @@ def protocol_schema():
                                             "(declared volatile regions)"}},
             ["op"]),
         req("hit", {"x": {"type": "number"}, "y": {"type": "number"}}, ["x", "y"]),
+        req("act", {"use": {"type": "string", "pattern": f"^{NAME}$",
+                            "$comment": "an action the pack declares: a change outside the "
+                                        "application (Proposal-Outside-Actions.md)"},
+                    "with": {"type": "object"}},
+            ["use"]),
         req("client", {"op": {"enum": ["adopt", "open", "select", "reload", "duplicate", "close"],
                               "$comment": "a client of the application as a whole "
                                           "(Proposal-Multiple-Clients.md); select addresses "

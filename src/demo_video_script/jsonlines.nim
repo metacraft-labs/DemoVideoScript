@@ -162,6 +162,8 @@ proc spawnJsonLinesBackend*(command: string; args: seq[string] = @[]; workDir = 
     var a = (if args == nil: newJObject() else: args.copy)
     a["op"] = %($op)
     c.call("record", a, 120_000)
+  result.act = proc (use: string; args: JsonNode) =
+    discard c.call("act", %*{"use": use, "with": (if args == nil: newJObject() else: args)}, 120_000)
   result.client = proc (op: string; args: JsonNode) =
     var a = (if args == nil: newJObject() else: args.copy)
     a["op"] = %op
@@ -220,6 +222,10 @@ proc dispatch*(b: Backend; req: JsonNode): JsonNode =
       let op = parseEnum[RecordOp](req{"op"}.getStr)
       res = b.record(op, req)
       if res == nil: res = newJObject()
+    of "act":
+      if b.act == nil:
+        return errorResponse(id, beUnsupported, "this backend makes no changes outside the application")
+      b.act(req{"use"}.getStr, (if req{"with"}.isNil: newJObject() else: req["with"]))
     of "client":
       if b.client == nil:
         return errorResponse(id, beUnsupported, "this backend has one client")

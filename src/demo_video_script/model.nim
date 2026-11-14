@@ -94,7 +94,7 @@ type
     stDrag = "drag", stWheel = "wheel", stExpect = "expect", stWait = "wait",
     stFlow = "flow", stBeat = "beat", stCapture = "capture", stExt = "ext",
     stOpenClient = "open-client", stReload = "reload", stDuplicate = "duplicate",
-    stCloseClient = "close-client"
+    stCloseClient = "close-client", stAct = "act"
 
   Isolation* = enum
     ## What two clients of one application share on the client side
@@ -149,8 +149,8 @@ type
     untilName*: string               ## stWait on a named condition
     untilIsObservation*: bool
     timeout*: Millis                 ## stWait, -1 when absent
-    name*: string                    ## stFlow, stBeat, stCapture, stExt
-    args*: YNode                     ## stFlow / stExt `with`
+    name*: string                    ## stFlow, stBeat, stCapture, stExt, stAct
+    args*: YNode                     ## stFlow / stExt / stAct `with`
     steps*: seq[Step]                ## stBeat
     captureOf*: Target
     hasCaptureOf*: bool
@@ -252,7 +252,10 @@ type
     line*, col*: int
 
   StageDecl* = object
+    ## A stage procedure, or an action (`actions:`, Proposal-Outside-Actions.md):
+    ## the same signature, a name and its parameters.
     name*: string
+    summary*: string
     params*: OrderedTable[string, PropType]
     line*, col*: int
 
@@ -265,6 +268,9 @@ type
     sync*: OrderedTable[string, SyncDecl]
     flows*: OrderedTable[string, FlowDecl]
     stages*: OrderedTable[string, StageDecl]
+    actions*: OrderedTable[string, StageDecl]
+      ## changes outside the application a step may make (`act:`); each one's
+      ## summary says what in the world outside the application changes
     clientKinds*: OrderedTable[string, string]
       ## client kind -> the sync condition that means it finished opening ("" none)
 

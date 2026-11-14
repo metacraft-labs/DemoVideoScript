@@ -86,7 +86,7 @@ the role (`title-end`, `caret-at(3)`), and `center` is implicit.
 
 **Keys** are spelled `Enter`, `Esc`, `Tab`, `Backspace`, `Delete`, `Insert`, `Home`,
 `End`, `PageUp`, `PageDown`, `Up`, `Down`, `Left`, `Right`, `Space`, `Plus` (the `+` key),
-`F1`–`F24`, the modifiers `Ctrl`, `Shift`, `Alt`, `Meta` and `Mod`, or one character.
+`F1`–`F24`, `Menu` (the context-menu key), the modifiers `Ctrl`, `Shift`, `Alt`, `Meta` and `Mod`, or one character.
 `Mod` is the platform's primary modifier: `Meta` on macOS, `Ctrl` elsewhere. A backend
 that cannot deliver a key refuses the step; it never sends a different key.
 
@@ -137,6 +137,20 @@ word is a string.
 ```
 
 A wait never passes by timing out. `settled` is always available.
+
+### Changes outside the application
+
+```yaml
+- act: { use: write-file, with: { path: notes.json, content: "[]" } }
+- wait: { until: { at: note-list, count: 0 } }
+```
+
+`act` names an **action** the pack declares (`actions:`, below): a change made outside
+the application while it runs — another program writing a file, a second process of the
+product started from a shell. It is never the application's own state, and a stage
+procedure cannot be named here. An `act` step has no `settle`: wait for the application's
+answer by name. A backend without the `act` capability makes such a scenario
+`unsupported`.
 
 ### Flows, beats, captures and extension steps
 
@@ -206,6 +220,10 @@ flows:
     - click: { at: 'note-list/note[title="${title}"]' }
 stages:
   seed-notes: { params: { fixture: text } }
+actions:
+  write-file:
+    summary: Another program writes a file; the application is not told.
+    params: { path: text, content: text }
 ```
 
 Property types: `text`, `lines`, `bool`, `int`, `number`, `enum{a,b}`, `record`,
@@ -215,7 +233,8 @@ Property types: `text`, `lines`, `bool`, `int`, `number`, `enum{a,b}`, `record`,
 
 Stages are declared by signature only: their code is your project's, written in each
 backend's language, and runs before the first step. After the stage ends, nothing can
-call it.
+call it. Actions are declared the same way and run as `act` steps; each needs a `summary`
+saying what outside the application it changes.
 
 A stage call may take 120 s; a lane raises the limit with `stage-timeout:` (ms) and
 `dvs run` with `--stage-timeout MS`. The stage receives the limit as `$timeoutMs`, so a
@@ -251,7 +270,7 @@ runner, once, for every backend.
 | L4   | an ordinal locator (`[#n]`)                                                                                                                                | warning  |
 | L5   | an observation directly after an input with `settle: false` and no wait                                                                                    | error    |
 | L6   | a `dwell` or `lead-in` followed by an observation with no wait between                                                                                     | warning  |
-| L7   | a named assertion, sync condition, flow or stage referenced but not declared, or given the wrong arguments                                                 | error    |
+| L7   | a named assertion, sync condition, flow, stage or action referenced but not declared, or given the wrong arguments                                         | error    |
 | L8   | an extension step whose backend the scenario does not `require`                                                                                            | error    |
 | L9   | narration, a caption or a callout anchored to a step id or beat that does not exist                                                                        | error    |
 | L10  | a pack role, property, flow or assertion named like a format keyword                                                                                       | error    |

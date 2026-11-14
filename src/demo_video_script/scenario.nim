@@ -15,7 +15,7 @@ const
   ImplementedVersion* = 1
   ActionKeys* = ["key", "chord", "type", "press", "release", "move", "hover", "click",
                  "drag", "wheel", "expect", "wait", "flow", "beat", "capture", "ext",
-                 "open-client", "reload", "duplicate", "close-client"]
+                 "open-client", "reload", "duplicate", "close-client", "act"]
   AnnotationKeys* = ["id", "lead-in", "dwell", "chapter", "narration", "caption", "callout",
                      "alternatives"]
   ReservedObservationKeys* = ["at", "assert", "geometry", "role", "absent", "present", "holds"]
@@ -28,7 +28,7 @@ const
                    "observe.focus", "sync.event", "sync.visual-settle",
                    "record.cast", "record.video", "record.still", "record.mask",
                    "client.multi", "client.reload", "client.duplicate",
-                   "client.isolation.separate", "client.isolation.shared"]
+                   "client.isolation.separate", "client.isolation.shared", "act"]
 
 type
   Ctx* = object
@@ -716,6 +716,23 @@ proc parseStep*(c: var Ctx; n: YNode): Step =
         else:
           c.structural(iso, "isolation is separate or shared")
           ok = false
+    else: ok = false
+  of stAct:
+    # a change outside the application (Proposal-Outside-Actions.md):
+    # `act: { use: <action>, with: { … } }`
+    if c.expectMap(v, "act"):
+      if not c.checkKeys(v, ["use", "with"], "act"): ok = false
+      let u = v.get("use")
+      if u == nil:
+        c.structural(v, "act needs 'use' (an action the pack declares)")
+        ok = false
+      else:
+        s.name = c.parseName(u, "act use")
+        if s.name == "": ok = false
+      let w = v.get("with")
+      if w != nil:
+        if not c.expectMap(w, "with"): ok = false
+        s.args = w
     else: ok = false
   of stCapture:
     if c.expectMap(v, "capture"):

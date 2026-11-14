@@ -1,0 +1,10 @@
+# expect: L7:8 L7:9 L1:10
+scenario: 1
+name: lint/l7-act-bad
+pack: notes-app
+stage:
+  - use: launch-app
+steps:
+  - act: { use: no-such-action }
+  - act: { use: write-file, with: { path: /tmp/x, colour: red } }
+  - act: { use: seed-notes }

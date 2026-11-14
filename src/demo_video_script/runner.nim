@@ -176,6 +176,7 @@ proc stepNeeds(s: Step): seq[string] =
   of stDuplicate: result.add ["client.multi", "client.duplicate", "client.isolation.shared"]
   of stOpenClient: result.add ["client.multi", "client.isolation." & $s.isolation]
   of stCloseClient: result.add "client.multi"
+  of stAct: result.add "act"
   else: discard
 
 proc affordanceFor(s: Step; which: string): string =
@@ -907,6 +908,12 @@ proc runScenario*(sc: Scenario; pack: Pack; b: Backend; options: RunOptions): Ru
           if opts.deterministic: r.checkStable(args, sr.artifacts)
       of stExt:
         b.send(%*{"ext": s.name, "with": (if s.args == nil: newJObject() else: s.args.toJson)})
+      of stAct:
+        # a change outside the application; what the application does in
+        # answer is waited for by the steps that follow (no settle)
+        if b.act == nil:
+          raise newException(StepFailure, "this backend makes no changes outside the application")
+        b.act(s.name, (if s.args == nil: newJObject() else: s.args.toJson))
       else: discard
       sr.status = ssPassed
     except StepFailure as e:

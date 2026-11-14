@@ -76,6 +76,10 @@ type
       ## A named sync condition (`settled`, a pack condition, or a role's
       ## condition on `instance`). False when the deadline passed.
     record*: proc (op: RecordOp; args: JsonNode): JsonNode {.closure.}
+    act*: proc (use: string; args: JsonNode) {.closure.}
+      ## An `act` step (Proposal-Outside-Actions.md): a change outside the
+      ## application, by its declared name and arguments. nil for a backend
+      ## that cannot make one (no `act` capability).
     client*: proc (op: string; args: JsonNode) {.closure.}
       ## A client of the application as a whole (Proposal-Multiple-Clients.md):
       ## `adopt` names the client the stage opened, `open` opens one more

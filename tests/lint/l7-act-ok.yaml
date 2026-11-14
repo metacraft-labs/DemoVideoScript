@@ -1,0 +1,9 @@
+# expect:
+scenario: 1
+name: lint/l7-act-ok
+pack: notes-app
+stage:
+  - use: launch-app
+steps:
+  - act: { use: write-file, with: { path: /tmp/x, content: "y" } }
+  - key: Menu

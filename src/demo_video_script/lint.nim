@@ -302,6 +302,22 @@ proc lintStep(l: var Linter; s: Step) =
     if backend notin l.sc.requires:
       l.err(s.line, s.col, "L8", "extension step 'ext: " & s.name & "' needs backend '" &
         backend & "'; declare it with requires: [" & backend & "]")
+  of stAct:
+    # an action outside the application (Proposal-Outside-Actions.md): declared
+    # by the pack as one; a stage procedure is never one (§4.7.2)
+    if l.pack != nil:
+      if not l.pack.actions.hasKey(s.name):
+        if l.pack.stages.hasKey(s.name):
+          l.err(s.line, s.col, "L1", "'" & s.name & "' is a stage procedure: the stage ends " &
+            "before the first step, and an act step names an action the pack declares")
+        else:
+          l.err(s.line, s.col, "L7", "action '" & s.name & "' is not declared by the pack")
+      else:
+        let d = l.pack.actions[s.name]
+        if s.args != nil and s.args.kind == yMap:
+          for k, _ in s.args.pairs:
+            if not d.params.hasKey(k.s):
+              l.err(k.line, k.col, "L7", "action '" & s.name & "' has no parameter '" & k.s & "'")
   of stKey, stChord, stType, stOpenClient, stReload, stDuplicate, stCloseClient: discard
   for _, alt in s.alternatives:
     l.lintSteps(alt)

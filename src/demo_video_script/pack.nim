@@ -58,7 +58,7 @@ proc parsePackNode*(root: YNode; file: string): (Pack, Diagnostics) =
       " is not implemented; this parser implements version 1")
     return (pack, c.diags)
   discard c.checkKeys(root, ["pack", "name", "summary", "root", "roles", "sync", "flows", "stages",
-                            "clients"],
+                            "actions", "clients"],
     "a pack")
   for req in ["name", "root", "roles"]:
     if root.get(req) == nil: c.structural(root, "missing '" & req & "'")
@@ -190,19 +190,23 @@ proc parsePackNode*(root: YNode; file: string): (Pack, Diagnostics) =
             bad = true
         if not bad:
           pack.flows[sig.name] = FlowDecl(sig: sig, body: fv, line: fk.line, col: fk.col)
-    of "stages":
+    of "stages", "actions":
+      # stage procedures, and actions (Proposal-Outside-Actions.md): changes
+      # outside the application a step may make; the same signatures
+      let what = (if k.s == "stages": "stage" else: "action")
       if v.kind != yMap:
-        c.structural(v, "stages is a mapping from name to { params }")
+        c.structural(v, k.s & " is a mapping from name to { params }")
         continue
       for sk, sv in v.pairs:
         if not sk.s.isName:
-          c.structural(sk, "stage name '" & sk.s & "' is not a name")
+          c.structural(sk, what & " name '" & sk.s & "' is not a name")
           continue
         var d = StageDecl(name: sk.s, line: sk.line, col: sk.col)
         if sv.kind == yMap:
-          discard c.checkKeys(sv, ["params", "summary"], "stage '" & sk.s & "'")
+          discard c.checkKeys(sv, ["params", "summary"], what & " '" & sk.s & "'")
           let s = sv.get("summary")
           if s != nil and s.kind != yString: c.structural(s, "summary must be a string")
+          elif s != nil: d.summary = s.s
           let ps = sv.get("params")
           if ps != nil:
             if ps.kind != yMap:
@@ -214,8 +218,16 @@ proc parsePackNode*(root: YNode; file: string): (Pack, Diagnostics) =
                   c.structural(pv, "parameter '" & pk.s & "': not a type")
                 else: d.params[pk.s] = parsePropType(pv.s)
         elif sv.kind != yNull:
-          c.structural(sv, "a stage is { params } or ~")
-        pack.stages[sk.s] = d
+          c.structural(sv, "a " & what & " is { params } or ~")
+        if what == "action":
+          # the summary is where "outside the application" is stated, and
+          # reviewed: an action without one is refused
+          if d.summary.strip.len == 0:
+            c.structural(if sv.kind == yMap: sv else: sk, "action '" & sk.s &
+              "' needs a summary saying what outside the application it changes")
+          pack.actions[sk.s] = d
+        else:
+          pack.stages[sk.s] = d
     of "clients":
       # the client kinds a scenario can open (Proposal-Multiple-Clients.md §2.4),
       # each with the condition that means it finished opening

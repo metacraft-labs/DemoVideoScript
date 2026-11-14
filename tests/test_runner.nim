@@ -76,6 +76,21 @@ suite "the runner on the reference backend":
       if s{"observed"}{"reads"}.getInt(0) >= 2: held = true
     check held
 
+  test "an act step makes its change outside the application between two steps":
+    removeFile("/tmp/dvs-act-test-file")
+    defer: removeFile("/tmp/dvs-act-test-file")
+    let r = runJson(root / "tests/runner/act-writes-a-file.yaml", "cmd:" & refapp)
+    check r["outcome"].getStr == "passed"
+    check readFile("/tmp/dvs-act-test-file") == "written by another program\n"
+    check r["steps"][1]["kind"].getStr == "act"
+
+  test "a scenario with an act step is unsupported on a backend that makes no changes outside":
+    let r = runJson(root / "tests/runner/act-writes-a-file.yaml", "cmd:" & refapp & " --without=act")
+    check r["outcome"].getStr == "unsupported"
+    var caps: seq[string]
+    for u in r["unsupported"]: caps.add u["capability"].getStr
+    check "act" in caps
+
   test "a scenario with one client reloads it as main":
     let r = runJson(root / "tests/runner/reload-main.yaml", "cmd:" & refapp)
     check r["outcome"].getStr == "passed"

@@ -88,6 +88,16 @@
           ]
         }
       }
+    },
+    "actions": {
+      "type": "object",
+      "additionalProperties": false,
+      "$comment": "changes outside the application a step may make (Proposal-Outside-Actions.md); the summary says what",
+      "patternProperties": {
+        "^[a-z][a-z0-9-]*$": {
+          "$ref": "#/$defs/action"
+        }
+      }
     }
   },
   "$defs": {
@@ -205,6 +215,28 @@
         },
         "summary": {
           "type": "string"
+        }
+      }
+    },
+    "action": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "summary"
+      ],
+      "properties": {
+        "params": {
+          "type": "object",
+          "additionalProperties": false,
+          "patternProperties": {
+            "^[a-z][a-z0-9-]*$": {
+              "$ref": "#/$defs/type"
+            }
+          }
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1
         }
       }
     }

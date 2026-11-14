@@ -130,3 +130,7 @@ stages:
   mark-started:
     summary: Write a file recording that the stage ran.
     params: { path: text }
+actions:
+  write-file:
+    summary: Another program writes a file (`path`) with `content`; the application is not told.
+    params: { path: text, content: text }

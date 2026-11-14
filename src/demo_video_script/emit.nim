@@ -114,6 +114,10 @@ proc emitStep*(s: Step): JsonNode =
     w["until"] = (if s.untilIsObservation: emitObservation(s.observation) else: %s.untilName)
     if s.timeout >= 0: w["timeout"] = %formatDuration(s.timeout)
     result["wait"] = w
+  of stAct:
+    var a = %*{"use": s.name}
+    if s.args != nil: a["with"] = s.args.toJson
+    result["act"] = a
   of stFlow, stExt:
     result[$s.kind] = %s.name
     if s.args != nil: result["with"] = s.args.toJson

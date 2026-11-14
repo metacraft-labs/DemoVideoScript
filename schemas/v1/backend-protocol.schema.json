@@ -206,7 +206,8 @@
               "client.reload",
               "client.duplicate",
               "client.isolation.separate",
-              "client.isolation.shared"
+              "client.isolation.shared",
+              "act"
             ]
           }
         },
@@ -668,6 +669,31 @@
             },
             "y": {
               "type": "number"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "id",
+            "call",
+            "use"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "type": "integer"
+            },
+            "call": {
+              "const": "act"
+            },
+            "use": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9-]*$",
+              "$comment": "an action the pack declares: a change outside the application (Proposal-Outside-Actions.md)"
+            },
+            "with": {
+              "type": "object"
             }
           }
         },
