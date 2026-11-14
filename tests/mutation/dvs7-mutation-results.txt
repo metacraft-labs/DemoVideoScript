@@ -1,65 +1,65 @@
-# dvs7 mutation results — 2026-11-12 22:37:50 +0200
+# dvs7 mutation results — 2026-11-14 21:06:12 +0200
 # kill command: just build test-recordings
 
-KILLED   C1       92.8s  retention keeping one run too few
+KILLED   C1      128.0s  retention keeping one run too few
            | DVS_BIN_DIR=$BUILD_DIR/bin nim c -r --hints:off --styleCheck:usages --styleCheck:error --path:src --nimcache:$BUILD_DIR/nimcache/test_recordings -o:$BUILD_DIR/t
            | Error: execution of an external program failed: '$BUILD_DIR/test-bin/test_recordings'
-           | error: Recipe `test-recordings` failed on line 62 with exit code 1
-KILLED   C2       49.1s  retention deleting a failure younger than the horizon
+           | error: Recipe `test-recordings` failed on line 63 with exit code 1
+KILLED   C2       49.0s  retention deleting a failure younger than the horizon
            | DVS_BIN_DIR=$BUILD_DIR/bin nim c -r --hints:off --styleCheck:usages --styleCheck:error --path:src --nimcache:$BUILD_DIR/nimcache/test_recordings -o:$BUILD_DIR/t
            | Error: execution of an external program failed: '$BUILD_DIR/test-bin/test_recordings'
-           | error: Recipe `test-recordings` failed on line 62 with exit code 1
-KILLED   C3       49.1s  a recording written outside the build directory
+           | error: Recipe `test-recordings` failed on line 63 with exit code 1
+KILLED   C3       47.1s  a recording written outside the build directory
            | DVS_BIN_DIR=$BUILD_DIR/bin nim c -r --hints:off --styleCheck:usages --styleCheck:error --path:src --nimcache:$BUILD_DIR/nimcache/test_recordings -o:$BUILD_DIR/t
            | Error: execution of an external program failed: '$BUILD_DIR/test-bin/test_recordings'
-           | error: Recipe `test-recordings` failed on line 62 with exit code 1
-KILLED   C4       49.9s  a recording allowed into a shared state directory
+           | error: Recipe `test-recordings` failed on line 63 with exit code 1
+KILLED   C4       44.3s  a recording allowed into a shared state directory
            | DVS_BIN_DIR=$BUILD_DIR/bin nim c -r --hints:off --styleCheck:usages --styleCheck:error --path:src --nimcache:$BUILD_DIR/nimcache/test_recordings -o:$BUILD_DIR/t
            | Error: execution of an external program failed: '$BUILD_DIR/test-bin/test_recordings'
-           | error: Recipe `test-recordings` failed on line 62 with exit code 1
-KILLED   C5       66.2s  a volatile region ignored
+           | error: Recipe `test-recordings` failed on line 63 with exit code 1
+KILLED   C5       51.2s  a volatile region ignored
            | DVS_BIN_DIR=$BUILD_DIR/bin nim c -r --hints:off --styleCheck:usages --styleCheck:error --path:src --nimcache:$BUILD_DIR/nimcache/test_recordings -o:$BUILD_DIR/t
            | Error: execution of an external program failed: '$BUILD_DIR/test-bin/test_recordings'
-           | error: Recipe `test-recordings` failed on line 62 with exit code 1
-KILLED   C6       57.2s  a declared volatile region not masked
+           | error: Recipe `test-recordings` failed on line 63 with exit code 1
+KILLED   C6       40.7s  a declared volatile region not masked
            | DVS_BIN_DIR=$BUILD_DIR/bin nim c -r --hints:off --styleCheck:usages --styleCheck:error --path:src --nimcache:$BUILD_DIR/nimcache/test_recordings -o:$BUILD_DIR/t
            | Error: execution of an external program failed: '$BUILD_DIR/test-bin/test_recordings'
-           | error: Recipe `test-recordings` failed on line 62 with exit code 1
-KILLED   C7       61.3s  the machine's time in a deterministic timeline
+           | error: Recipe `test-recordings` failed on line 63 with exit code 1
+KILLED   C7       50.2s  the machine's time in a deterministic timeline
            | DVS_BIN_DIR=$BUILD_DIR/bin nim c -r --hints:off --styleCheck:usages --styleCheck:error --path:src --nimcache:$BUILD_DIR/nimcache/test_recordings -o:$BUILD_DIR/t
            | Error: execution of an external program failed: '$BUILD_DIR/test-bin/test_recordings'
-           | error: Recipe `test-recordings` failed on line 62 with exit code 1
-KILLED   C8       74.5s  a citation resolved without its capture name
+           | error: Recipe `test-recordings` failed on line 63 with exit code 1
+KILLED   C8       54.0s  a citation resolved without its capture name
            | DVS_BIN_DIR=$BUILD_DIR/bin nim c -r --hints:off --styleCheck:usages --styleCheck:error --path:src --nimcache:$BUILD_DIR/nimcache/test_recordings -o:$BUILD_DIR/t
            | Error: execution of an external program failed: '$BUILD_DIR/test-bin/test_recordings'
-           | error: Recipe `test-recordings` failed on line 62 with exit code 1
-KILLED   C9       49.4s  a lane passing an unexpected unsupported
+           | error: Recipe `test-recordings` failed on line 63 with exit code 1
+KILLED   C9       39.8s  a lane passing an unexpected unsupported
            | DVS_BIN_DIR=$BUILD_DIR/bin nim c -r --hints:off --styleCheck:usages --styleCheck:error --path:src --nimcache:$BUILD_DIR/nimcache/test_recordings -o:$BUILD_DIR/t
            | Error: execution of an external program failed: '$BUILD_DIR/test-bin/test_recordings'
-           | error: Recipe `test-recordings` failed on line 62 with exit code 1
-KILLED   C10      59.4s  a failure bundle without the backend's log
+           | error: Recipe `test-recordings` failed on line 63 with exit code 1
+KILLED   C10      47.0s  a failure bundle without the backend's log
            | DVS_BIN_DIR=$BUILD_DIR/bin nim c -r --hints:off --styleCheck:usages --styleCheck:error --path:src --nimcache:$BUILD_DIR/nimcache/test_recordings -o:$BUILD_DIR/t
            | Error: execution of an external program failed: '$BUILD_DIR/test-bin/test_recordings'
-           | error: Recipe `test-recordings` failed on line 62 with exit code 1
-KILLED   C11      73.2s  a passing run's captures deleted with its recording
+           | error: Recipe `test-recordings` failed on line 63 with exit code 1
+KILLED   C11      51.4s  a passing run's captures deleted with its recording
            | DVS_BIN_DIR=$BUILD_DIR/bin nim c -r --hints:off --styleCheck:usages --styleCheck:error --path:src --nimcache:$BUILD_DIR/nimcache/test_recordings -o:$BUILD_DIR/t
            | Error: execution of an external program failed: '$BUILD_DIR/test-bin/test_recordings'
-           | error: Recipe `test-recordings` failed on line 62 with exit code 1
-KILLED   C12      90.7s  a passing run's recording kept beside its captures
+           | error: Recipe `test-recordings` failed on line 63 with exit code 1
+KILLED   C12      60.9s  a passing run's recording kept beside its captures
            | DVS_BIN_DIR=$BUILD_DIR/bin nim c -r --hints:off --styleCheck:usages --styleCheck:error --path:src --nimcache:$BUILD_DIR/nimcache/test_recordings -o:$BUILD_DIR/t
            | Error: execution of an external program failed: '$BUILD_DIR/test-bin/test_recordings'
-           | error: Recipe `test-recordings` failed on line 62 with exit code 1
-KILLED   C13      67.6s  a stage call's limit ignored
+           | error: Recipe `test-recordings` failed on line 63 with exit code 1
+KILLED   C13      58.1s  a stage call's limit ignored
            | DVS_BIN_DIR=$BUILD_DIR/bin nim c -r --hints:off --styleCheck:usages --styleCheck:error --path:src --nimcache:$BUILD_DIR/nimcache/test_recordings -o:$BUILD_DIR/t
            | Error: execution of an external program failed: '$BUILD_DIR/test-bin/test_recordings'
-           | error: Recipe `test-recordings` failed on line 62 with exit code 1
-KILLED   C14      71.0s  the stage not given its time limit
+           | error: Recipe `test-recordings` failed on line 63 with exit code 1
+KILLED   C14      44.8s  the stage not given its time limit
            | DVS_BIN_DIR=$BUILD_DIR/bin nim c -r --hints:off --styleCheck:usages --styleCheck:error --path:src --nimcache:$BUILD_DIR/nimcache/test_recordings -o:$BUILD_DIR/t
            | Error: execution of an external program failed: '$BUILD_DIR/test-bin/test_recordings'
-           | error: Recipe `test-recordings` failed on line 62 with exit code 1
-KILLED   C15      73.3s  a lane's stage-timeout ignored
+           | error: Recipe `test-recordings` failed on line 63 with exit code 1
+KILLED   C15      52.9s  a lane's stage-timeout ignored
            | DVS_BIN_DIR=$BUILD_DIR/bin nim c -r --hints:off --styleCheck:usages --styleCheck:error --path:src --nimcache:$BUILD_DIR/nimcache/test_recordings -o:$BUILD_DIR/t
            | Error: execution of an external program failed: '$BUILD_DIR/test-bin/test_recordings'
-           | error: Recipe `test-recordings` failed on line 62 with exit code 1
+           | error: Recipe `test-recordings` failed on line 63 with exit code 1
 
 15/15 killed, 0 survived
