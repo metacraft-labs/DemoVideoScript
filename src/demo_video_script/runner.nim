@@ -438,7 +438,7 @@ proc resolveChords(r: var Run; s: Step): string =
   for c in cs.mitems: c = resolveMod(c, r.platform)
   $cs
 
-proc sendInput(r: var Run; s: Step; sr: var StepResult): float =
+proc sendInputOnce(r: var Run; s: Step; sr: var StepResult): float =
   ## Sends one input action; returns the pacing time it carries (virtual timing).
   var action = emitStep(s)
   for k in ["id", "lead-in", "dwell", "chapter", "narration", "caption", "callout",
@@ -504,6 +504,18 @@ proc sendInput(r: var Run; s: Step; sr: var StepResult): float =
   pacing += pathDuration(timing{"path"}) + pathDuration(timing{"approach"})
   if s.kind == stHover and s.hoverFor > 0: pacing += float(s.hoverFor)
   pacing
+
+proc sendInput(r: var Run; s: Step; sr: var StepResult): float =
+  ## One input action, its targets located afresh when the window redrew
+  ## between the locate and the send: the backend finds the instance it handed
+  ## out gone (`not-found`) before it delivers anything to it, as an
+  ## observation's read does (`checkObservation`).
+  for attempt in 1 .. RelocateAttempts:
+    try:
+      return r.sendInputOnce(s, sr)
+    except BackendError as e:
+      if e.kind != beNotFound or attempt == RelocateAttempts: raise
+      sleep(25)
 
 proc settle(r: var Run; s: Step) =
   if not s.settle: return
