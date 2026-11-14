@@ -1,6 +1,8 @@
 ## `dvs` — the DemoVideoScript command line (see demo_video_script/cli.nim).
 ## Out-of-process backends are reached with `--backend cmd:PROGRAM`.
 
-import demo_video_script/cli
+import demo_video_script/[cli, orphans]
 
-when isMainModule: dvsMain()
+when isMainModule:
+  installOrphanReaper()
+  dvsMain()

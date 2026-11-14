@@ -55,6 +55,7 @@ test-cli:
 # The runner against the reference backend, in process and over JSON lines.
 test-runner:
     DVS_BIN_DIR={{bin}} nim c -r {{nim_flags}} --nimcache:{{build_dir}}/nimcache/test_runner -o:{{build_dir}}/test-bin/test_runner tests/test_runner.nim
+    DVS_BIN_DIR={{bin}} nim c -r {{nim_flags}} --nimcache:{{build_dir}}/nimcache/test_orphans -o:{{build_dir}}/test-bin/test_orphans tests/test_orphans.nim
 
 # Recordings, retention, lanes, deterministic captures and citations (§9).
 test-recordings:
