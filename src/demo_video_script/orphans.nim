@@ -15,6 +15,17 @@
 ## couple of seconds — so a lane does not carry one scenario's leftovers
 ## through the next. When `dvs` exits, every descendant still running is
 ## stopped. `DVS_KEEP_ORPHANS=1` turns both off.
+##
+## A TRACED orphan is not a detached helper and is left to its tracer. A
+## debugger or recorder that forks its tracees' processes reparents them here
+## whenever their parent goes: rr keeps a replay's checkpoints as forks of the
+## replayed process, and when it moves the replay on it kills the old process
+## and keeps using the fork, which is then this process's child in another
+## session (the desktop's). Stopped by the reaper, rr's replay died in the
+## middle of a scenario ("Tracee died unexpectedly", codetracer-specs issue
+## 2026-11-15, "rr dies restarting a replay in the desktop"). The tracer owns
+## such a process and ends it (rr's tracees die with rr); the exit pass below
+## still stops whatever is left.
 
 when defined(linux):
   import std/[exitprocs, os, posix, strutils]
@@ -48,6 +59,17 @@ when defined(linux):
       let info = procInfo(parseInt(name))
       if info.pid > 0: result.add info
 
+  proc traced(pid: int): bool =
+    ## A tracer (a debugger, a recorder) is attached: `TracerPid` in
+    ## /proc/<pid>/status is not 0.
+    try:
+      for line in lines("/proc/" & $pid & "/status"):
+        if line.startsWith("TracerPid:"):
+          return line["TracerPid:".len .. ^1].strip != "0"
+    except CatchableError:
+      discard
+    false
+
   proc descendantsOf(procs: seq[ProcInfo]; pid: int): seq[int] =
     for p in procs:
       if p.ppid == pid:
@@ -65,11 +87,12 @@ when defined(linux):
   proc reapDetachedOrphans*() =
     ## Stop every child of this process that lives in another session: a
     ## detached helper reparented here when the backend that started it ended.
+    ## A traced one is its tracer's (see the header).
     let me = getpid().int
     let mySession = getsid(0).int
     let procs = allProcs()
     for p in procs:
-      if p.ppid != me or p.session == mySession: continue
+      if p.ppid != me or p.session == mySession or traced(p.pid): continue
       stop(procs, p.pid)
 
   proc stopAllDescendants*() =
