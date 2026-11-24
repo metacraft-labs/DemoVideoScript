@@ -1,0 +1,9 @@
+scenario: 1
+name: runner/backend-exits-mid-scenario
+pack: notes-app
+stage:
+  - use: launch-app
+steps:
+  - click: search-field
+  - click: search-field
+  - click: search-field

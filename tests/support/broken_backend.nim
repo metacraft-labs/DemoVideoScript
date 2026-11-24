@@ -6,7 +6,11 @@
 ## way, so that the runner's handling of a broken backend is exercised over a
 ## real pipe.
 ##
-##   broken_backend non-json|exit|silent|wrong-id|unsettled|slow-stage
+##   broken_backend non-json|exit|exit-later|silent|wrong-id|unsettled|slow-stage
+##
+## `exit-later` works for the first step that locates a target and exits, as
+## `exit` does, at the second: the backend dies in the middle of a scenario,
+## with steps before it that passed and steps after it that are not run.
 ##
 ## `unsettled` is a backend whose application never settles: it locates the
 ## one target a step names and takes the input, and then answers every
@@ -21,6 +25,7 @@
 import std/[json, os]
 
 let mode = (if paramCount() >= 1: paramStr(1) else: "non-json")
+var locates = 0
 var line: string
 while stdin.readLine(line):
   let req = parseJson(line)
@@ -41,13 +46,14 @@ while stdin.readLine(line):
   of "end-stage":
     echo $(%*{"id": id, "ok": true})
   of "locate":
-    if mode in ["unsettled", "slow-stage"]:
+    inc locates
+    if mode in ["unsettled", "slow-stage"] or mode == "exit-later" and locates == 1:
       echo $(%*{"id": id, "ok": true, "outcome": "one", "instance": "0", "role": "search-field"})
       stdout.flushFile()
       continue
     case mode
     of "non-json": echo "this is not a protocol line"
-    of "exit":
+    of "exit", "exit-later":
       stderr.writeLine "broken_backend: exiting in the middle of a step"
       quit 3
     of "silent": sleep(60_000)

@@ -1014,9 +1014,12 @@ proc runScenario*(sc: Scenario; pack: Pack; b: Backend; options: RunOptions): Ru
       let res = b.record(recStop, %*{"dir": opts.runDir})
       for f in res{"files"}.getElems: r.res.media.add f.getStr
     except BackendError: discard
-  if r.res.outcome == roError:
-    finish(roError, r.res.steps[^1].message)
+  # A run that ends failed or error is explained by the step that ended it,
+  # never by the last step: the steps after `failedAt` were not run and have
+  # no message (§6.1).
   if failedAt >= 0:
     let f = r.res.steps[failedAt]
+    if r.res.outcome == roError:
+      finish(roError, "step " & f.path & " (" & f.kind & ") errored: " & f.message)
     finish(roFailed, "step " & f.path & " (" & f.kind & ") failed: " & f.message)
   finish(roPassed, "")

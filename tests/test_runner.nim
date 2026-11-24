@@ -356,6 +356,19 @@ suite "the JSON-lines transport":
         check "exited with status 3" in $r["steps"]
         check "exiting in the middle of a step" in $r["steps"]
 
+  test "a backend lost at a middle step: the run's message names that step and the backend's report":
+    # Not the last step's (empty) message: the steps after it are not run.
+    let r = runJson(root / "tests/runner/backend-exits-mid-scenario.yaml", "cmd:" & broken & " exit-later",
+                    env = [("DVS_BACKEND_TIMEOUT_MS", "1500")])
+    check r["outcome"].getStr == "error"
+    check statuses(r) == @["1:passed", "2:failed", "3:not-run"]
+    let message = r["message"].getStr
+    checkpoint "message: " & message
+    check message.startsWith("step 2 (click) ")
+    check "exited with status 3" in message
+    check "exiting in the middle of a step" in message
+    check r["steps"][1]["message"].getStr in message
+
   test "the stage channel closes: a stage call after end-stage is refused":
     let p = startProcess(refapp, options = {})
     p.inputStream.write("""{"id":1,"call":"end-stage"}""" & "\n" &
