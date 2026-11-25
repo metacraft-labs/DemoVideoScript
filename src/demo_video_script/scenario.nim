@@ -499,8 +499,9 @@ proc parseStep*(c: var Ctx; n: YNode): Step =
   var ok = not unknown
   # keys allowed besides annotations
   if n.get("settle") != nil:
-    if kind notin InputKinds:
-      c.report(n.keyNode("settle"), "L1", "settle applies only to input actions")
+    if kind notin SettleKinds:
+      c.report(n.keyNode("settle"), "L1", "settle applies only to input actions and to " &
+        "open-client, reload and duplicate")
       ok = false
     else:
       let b = c.expectBool(n.get("settle"), "settle")

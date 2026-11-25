@@ -280,6 +280,9 @@ const
   PointerTargetKinds* = {stMove, stHover, stClick, stWheel}
   ClientKinds* = {stOpenClient, stReload, stDuplicate, stCloseClient}
     ## Client actions: what a person does to a client as a whole
+  SettleKinds* = InputKinds + {stOpenClient, stReload, stDuplicate}
+    ## The steps followed by the implicit `settled`, which `settle: false`
+    ## turns off: the inputs, and the client actions that load a page
   StageClient* = "stage"             ## `open: stage` — the client the stage opened
   MainClient* = "main"               ## the one client of a scenario without `clients:`
   ImplicitProperties* = ["geometry", "present"]

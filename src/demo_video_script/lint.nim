@@ -351,9 +351,11 @@ proc lintSequence(l: var Linter) =
   for k in 0 ..< flat.len:
     let s = flat[k]
     let next = (if k + 1 < flat.len: flat[k + 1] else: nil)
-    if s.kind in InputKinds and not s.settle and next != nil and next.kind == stExpect:
-      l.err(next.line, next.col, "L5", "this observation directly follows an input action " &
-        "with settle: false and no wait; add a wait on the condition the input causes")
+    if s.kind in SettleKinds and not s.settle and next != nil and next.kind == stExpect:
+      l.err(next.line, next.col, "L5", "this observation directly follows " &
+        (if s.kind in InputKinds: "an input action" else: "a client action") &
+        " with settle: false and no wait; add a wait on the condition the " &
+        (if s.kind in InputKinds: "input" else: "action") & " causes")
     if s.dwell >= 0 and next != nil and next.kind == stExpect:
       l.warn(next.line, next.col, "L6", "this observation follows a dwell with no sync " &
         "condition between; it may depend on time (dwell has no effect in fast mode)")

@@ -167,7 +167,11 @@ proc spawnJsonLinesBackend*(command: string; args: seq[string] = @[]; workDir = 
   result.client = proc (op: string; args: JsonNode) =
     var a = (if args == nil: newJObject() else: args.copy)
     a["op"] = %op
-    discard c.call("client", a, 120_000)
+    # Opening, duplicating or reloading a client waits for the page to load,
+    # which a browser backend allows minutes on a loaded machine (the
+    # Playwright arm's `OPEN_WAIT`, 600 s): at 120 s the runner gave up on a
+    # duplicate the arm was still loading, at load ~140.
+    discard c.call("client", a, ClientCallTimeoutMs)
   result.hit = proc (x, y: float): Option[string] =
     let j = c.call("hit", %*{"x": x, "y": y})
     if j{"locator"}.kind == JString: some(j["locator"].getStr) else: none(string)

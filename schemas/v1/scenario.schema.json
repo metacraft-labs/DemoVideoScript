@@ -2794,6 +2794,9 @@
                 }
               }
             },
+            "settle": {
+              "type": "boolean"
+            },
             "id": {
               "$ref": "#/$defs/name"
             },
@@ -2921,6 +2924,9 @@
           "properties": {
             "reload": {
               "$ref": "#/$defs/name"
+            },
+            "settle": {
+              "type": "boolean"
             },
             "id": {
               "$ref": "#/$defs/name"
@@ -3062,6 +3068,9 @@
                   "$ref": "#/$defs/name"
                 }
               }
+            },
+            "settle": {
+              "type": "boolean"
             },
             "id": {
               "$ref": "#/$defs/name"

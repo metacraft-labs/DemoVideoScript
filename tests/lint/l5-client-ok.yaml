@@ -1,0 +1,20 @@
+# expect:
+scenario: 1
+name: lint/l5-client-ok
+pack: notes-app
+stage:
+  - use: launch-app
+clients:
+  a: { open: stage }
+  b: { open: notes-window }
+steps:
+  - reload: b
+    settle: false
+  - wait: { until: note-list.loaded }
+    as: b
+  - expect: { at: note-list, count: 3 }
+    as: b
+  - duplicate: { client: a, name: c }
+    settle: false
+  - wait: { until: note-list.loaded }
+    as: c

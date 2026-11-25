@@ -94,7 +94,10 @@ There is no step that calls application code, sets a value or moves focus direct
 Focus moves the way a user moves it.
 
 Every input action is followed by the pack's `settled` condition. `settle: false` opts
-out; then the next observation needs an explicit wait (L5).
+out; then the next observation needs an explicit wait (L5). The client actions that load a
+page (`open-client`, `reload`, `duplicate`) are followed by `settled` too and take
+`settle: false` the same way: an application can take longer to load than any settle limit
+an input deserves, and the scenario then waits for what the loaded page shows.
 
 ### Observations
 

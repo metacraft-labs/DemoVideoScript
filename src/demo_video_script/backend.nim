@@ -18,6 +18,9 @@ const
     ## How long one stage call may take unless the run says otherwise (a
     ## lane's `stage-timeout:`, `dvs run --stage-timeout`). The runner passes
     ## the limit to the stage as `$timeoutMs`.
+  ClientCallTimeoutMs* = 660_000
+    ## How long the runner waits for a `client` call: the Playwright arm's
+    ## 600 s limit on a page's load, plus the time around it
 
 type
   BackendErrorKind* = enum

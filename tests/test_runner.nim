@@ -95,6 +95,24 @@ suite "the runner on the reference backend":
     let r = runJson(root / "tests/runner/reload-main.yaml", "cmd:" & refapp)
     check r["outcome"].getStr == "passed"
 
+  test "a client action with settle: false is not followed by settled, and one without it is":
+    proc settledAfterReload(file: string): bool =
+      let t = getTempDir() / "dvs-reload-" & $getCurrentProcessId()
+      defer: removeFile(t)
+      let r = runJson(root / file, "cmd:" & refapp, env = [("DVS_PROTOCOL_TRANSCRIPT", t)])
+      check r["outcome"].getStr == "passed"
+      var calls: seq[JsonNode]
+      for line in lines(t):
+        if line.startsWith("> "): calls.add parseJson(line[2 .. ^1])
+      for k, c in calls:
+        if c["call"].getStr == "client" and c["op"].getStr == "reload":
+          for n in k + 1 ..< calls.len:
+            if calls[n]["call"].getStr == "await":
+              return calls[n]["condition"].getStr == "settled"
+      check false
+    check not settledAfterReload("tests/runner/reload-main-unsettled.yaml")
+    check settledAfterReload("tests/runner/reload-main.yaml")
+
   test "a scenario with two clients is unsupported, before its stage, on a backend with one client":
     let r = runJson(root / "tests/runner/two-clients.yaml", "cmd:" & refapp & " --without=client.multi")
     check r["outcome"].getStr == "unsupported"
