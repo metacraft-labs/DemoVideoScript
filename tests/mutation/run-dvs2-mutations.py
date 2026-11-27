@@ -16,6 +16,7 @@ R = "src/demo_video_script/runner.nim"
 E = "src/demo_video_script/eval.nim"
 J = "src/demo_video_script/jsonlines.nim"
 A = "conformance/refapp/refapp_backend.nim"
+N = "conformance/app/notes_core.nim"
 
 CHECK = '''  if missing.len > 0:
     r.res.unsupported = missing
@@ -70,6 +71,8 @@ ARMS = [
     Arm("J3", J, "  max(floorMs, configuredMs)", "  floorMs",
         "a call's own limit caps the run's DVS_BACKEND_TIMEOUT_MS"),
     Arm("A1", A, "    if st.stageClosed:", "    if false:", "the backend accepts stage calls after end-stage"),
+    Arm("N1", N, "      let t = (if e.time > 0: e.time else: app.now)", "      let t = app.now",
+        "a double-click timed on the handling clock, not the window system's"),
 ]
 
 if __name__ == "__main__":

@@ -18,6 +18,11 @@ const
     ## How long one stage call may take unless the run says otherwise (a
     ## lane's `stage-timeout:`, `dvs run --stage-timeout`). The runner passes
     ## the limit to the stage as `$timeoutMs`.
+  DefaultSettleCapMs* = 60_000
+    ## How long the implicit `settled` after an input may take in all while
+    ## the backend reports the application still changing (`awaitProgress`),
+    ## unless the run says otherwise (a lane's `settle-cap:`,
+    ## `dvs run --settle-cap`).
   ClientCallTimeoutMs* = 660_000
     ## How long the runner waits for a `client` call: the Playwright arm's
     ## 600 s limit on a page's load, plus the time around it
@@ -61,6 +66,13 @@ type
     bindings*: JsonNode         ## role -> { affordances, properties }; null when undeclared
     units*: string              ## "cell" or "px": the unit of geometry and paths
 
+  AwaitOutcome* = object
+    ## What `awaitProgress` answers.
+    met*: bool
+    progress*: bool
+      ## Not met, but still progressing at the deadline. Always false when
+      ## `met`.
+
   Backend* = ref object
     ## One backend session. Every proc may raise `BackendError`.
     hello*: proc (): Hello {.closure.}
@@ -78,6 +90,12 @@ type
     await*: proc (condition: string; instance: string; timeoutMs: int): bool {.closure.}
       ## A named sync condition (`settled`, a pack condition, or a role's
       ## condition on `instance`). False when the deadline passed.
+    awaitProgress*: proc (condition: string; instance: string; timeoutMs: int): AwaitOutcome {.closure.}
+      ## `await` that also says, when the condition is not met, whether it
+      ## was still progressing at the deadline (for `settled`: the window was
+      ## still changing, or a capture was still being taken), so that a longer
+      ## wait may meet it. nil for a backend that does not report progress;
+      ## the runner then uses `await`.
     record*: proc (op: RecordOp; args: JsonNode): JsonNode {.closure.}
     act*: proc (use: string; args: JsonNode) {.closure.}
       ## An `act` step (Proposal-Outside-Actions.md): a change outside the

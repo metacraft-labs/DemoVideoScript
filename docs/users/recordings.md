@@ -73,7 +73,8 @@ modes: [fast, realistic] # default: fast
 applicable: [archive-from-keyboard.yaml, drag-to-reorder.yaml]
 unsupported: [search-and-matchers.yaml]
 retention: { runs: 5, failure-days: 7 }
-settle-timeout: 20000 # ms the implicit `settled` after an input may take (default 5000)
+settle-timeout: 20000 # ms the implicit `settled` after an input may go without progress (default 5000)
+settle-cap: 120000 # ms it may take in all while the application is still changing (default 60000)
 stage-timeout: 300000 # ms one stage call may take (default 120000)
 ```
 

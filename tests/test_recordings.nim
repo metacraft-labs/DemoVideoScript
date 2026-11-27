@@ -164,7 +164,9 @@ suite "test lanes":
 suite "the settle timeout":
   # The one stand-in: tests/support/broken_backend.nim `unsettled`, a real
   # process on the real protocol whose application never settles, so the
-  # step ends when the runner's settle timeout says, and the message names it.
+  # step ends when the runner's settle timeout says, and the message names it;
+  # and `slow-settle`, whose application redraws for 7 s after an input and
+  # reports the progress.
   let broken = bin / "broken-backend"
   let scenario = root / "tests/runner/broken-backend.yaml"
 
@@ -187,6 +189,37 @@ suite "the settle timeout":
     checkpoint o
     check code == 1
     check "did not settle within 700 ms" in o
+
+  test "an application still changing past the settle timeout is waited on, up to the cap":
+    # `slow-settle` redraws for 7 s after the input: a fixed 5 s bound failed
+    # it; reported progress keeps the runner waiting until it settles
+    let build = scratch("settle3")
+    defer: removeDir(build)
+    let (o, code) = run(["run", scenario, "--pack", pack, "--backend", "cmd:" & broken & " slow-settle",
+                         "--build", build])
+    checkpoint o
+    check code == 0
+
+  test "a settle cap of the old fixed bound fails the same application":
+    let build = scratch("settle4")
+    defer: removeDir(build)
+    let (o, code) = run(["run", scenario, "--pack", pack, "--backend", "cmd:" & broken & " slow-settle",
+                         "--build", build, "--settle-cap", "5000"])
+    checkpoint o
+    check code == 1
+    check "did not settle within 5000 ms after the input: it was still changing" in o
+
+  test "a lane's settle-cap reaches its runs":
+    # a cap is never shorter than the settle timeout, so the lane shortens both
+    let build = scratch("settle5")
+    defer: removeDir(build)
+    let lane = build / "cap.lane.yaml"
+    writeFile(lane, "lane: 1\nname: cap\npack: " & pack & "\nbackend: \"cmd:" & broken &
+              " slow-settle\"\nsettle-timeout: 2000\nsettle-cap: 4000\napplicable:\n  - " & scenario & "\n")
+    let (o, code) = run(["lane", lane, "--build", build])
+    checkpoint o
+    check code == 1
+    check "did not settle within 4000 ms after the input: it was still changing" in o
 
 suite "the stage timeout":
   # The one stand-in: tests/support/broken_backend.nim `slow-stage`, a real

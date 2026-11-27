@@ -167,6 +167,12 @@ proc spawnJsonLinesBackend*(command: string; args: seq[string] = @[]; workDir = 
   result.await = proc (condition, instance: string; timeoutMs: int): bool =
     c.call("await", %*{"condition": condition, "instance": instance, "timeoutMs": timeoutMs},
            timeoutMs + 10_000){"met"}.getBool
+  # a backend that does not report progress answers without the field: not
+  # progressing, which is what `await` alone meant
+  result.awaitProgress = proc (condition, instance: string; timeoutMs: int): AwaitOutcome =
+    let j = c.call("await", %*{"condition": condition, "instance": instance,
+                               "timeoutMs": timeoutMs}, timeoutMs + 10_000)
+    AwaitOutcome(met: j{"met"}.getBool, progress: j{"progress"}.getBool)
   result.record = proc (op: RecordOp; args: JsonNode): JsonNode =
     var a = (if args == nil: newJObject() else: args.copy)
     a["op"] = %($op)
@@ -229,8 +235,14 @@ proc dispatch*(b: Backend; req: JsonNode): JsonNode =
     of "send":
       b.send(req{"action"})
     of "await":
-      res["met"] = %b.await(req{"condition"}.getStr, req{"instance"}.getStr,
-                            req{"timeoutMs"}.getInt(5000))
+      if b.awaitProgress != nil:
+        let o = b.awaitProgress(req{"condition"}.getStr, req{"instance"}.getStr,
+                                req{"timeoutMs"}.getInt(5000))
+        res["met"] = %o.met
+        if not o.met and o.progress: res["progress"] = %true
+      else:
+        res["met"] = %b.await(req{"condition"}.getStr, req{"instance"}.getStr,
+                              req{"timeoutMs"}.getInt(5000))
     of "record":
       let op = parseEnum[RecordOp](req{"op"}.getStr)
       res = b.record(op, req)

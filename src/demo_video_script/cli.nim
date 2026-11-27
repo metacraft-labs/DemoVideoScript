@@ -8,7 +8,7 @@
 ##   schema scenario|pack|backend-protocol print a published JSON Schema
 ##   run <scenario> --pack <pack.yaml> --backend <name | cmd:PROGRAM [ARG…]>
 ##       [--mode fast|realistic|virtual] [--seed N] [--record off|on-failure|always]
-##       [--timeout MS] [--settle-timeout MS] [--stage-timeout MS]
+##       [--timeout MS] [--settle-timeout MS] [--settle-cap MS] [--stage-timeout MS]
 ##       [--out DIR | --build DIR] [--keep-runs N] [--keep-failure-days D]
 ##       [--deterministic [--env NAME=VALUE]… [--pin LOCATOR]… [--pixel-threshold SSIM]]
 ##       [--json]
@@ -39,7 +39,7 @@ const
   dvs schema scenario|pack|backend-protocol
   dvs run <scenario> --pack <pack.yaml> --backend <name | cmd:PROGRAM [ARG...]>
       [--mode fast|realistic|virtual] [--seed N] [--record off|on-failure|always]
-      [--timeout MS] [--settle-timeout MS] [--stage-timeout MS]
+      [--timeout MS] [--settle-timeout MS] [--settle-cap MS] [--stage-timeout MS]
       [--out DIR | --build DIR] [--keep-runs N] [--keep-failure-days D]
       [--deterministic [--env NAME=VALUE]... [--pin LOCATOR]... [--pixel-threshold SSIM]]
       [--json]
@@ -199,6 +199,7 @@ proc cmdRun(args: seq[string]; builtins: Table[string, BackendFactory]) =
     of "--keep-failure-days": retention.failureDays = parseFloat(value())
     of "--timeout": opts.timeoutMs = parseInt(value())
     of "--settle-timeout": opts.settleTimeoutMs = parseInt(value())
+    of "--settle-cap": opts.settleCapMs = parseInt(value())
     of "--stage-timeout": opts.stageTimeoutMs = parseInt(value())
     of "--probe-reads": opts.probeReads = true
     of "--deterministic": opts.deterministic = true
@@ -293,6 +294,9 @@ proc cmdLane(args: seq[string]; builtins: Table[string, BackendFactory]) =
   # How long the implicit `settled` after an input may take (§4.5): a heavier
   # application on a loaded machine needs longer than the default.
   let settleTimeoutMs = lane{"settle-timeout"}.getInt(0)
+  # How long it may take in all while the backend reports the application
+  # still changing (a slow redraw on a loaded machine, not a hang).
+  let settleCapMs = lane{"settle-cap"}.getInt(0)
   # How long one stage call may take: a stage that records a program or
   # starts a large application can outlast the default on a loaded machine.
   let stageTimeoutMs = lane{"stage-timeout"}.getInt(0)
@@ -320,6 +324,7 @@ proc cmdLane(args: seq[string]; builtins: Table[string, BackendFactory]) =
       let r = runOne(f, pack, sc, b, RunOptions(mode: m, record: rpOnFailure, seed: 1,
                                                   runId: runId, runDir: group / runId,
                                                   settleTimeoutMs: settleTimeoutMs,
+                                                  settleCapMs: settleCapMs,
                                                   stageTimeoutMs: stageTimeoutMs))
       discard prune(group, retention)
       echo alignLeft($r.outcome, 12), alignLeft($m, 10), sc.name,

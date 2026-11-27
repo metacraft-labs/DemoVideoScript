@@ -303,6 +303,9 @@
         },
         "met": {
           "type": "boolean"
+        },
+        "progress": {
+          "type": "boolean"
         }
       }
     },

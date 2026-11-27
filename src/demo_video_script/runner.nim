@@ -33,6 +33,12 @@ type
     runDir*: string             ## where the manifest and stills go; "" = nowhere
     timeoutMs*: int             ## default wait timeout
     settleTimeoutMs*: int
+      ## How long the implicit `settled` after an input may go without the
+      ## application making progress towards it (default 5 s).
+    settleCapMs*: int
+      ## How long it may take in all while the backend reports the
+      ## application still changing (default 60 s, and never less than
+      ## `settleTimeoutMs`).
     stageTimeoutMs*: int
       ## How long one stage call may take (default 120 s), passed to the stage
       ## as `$timeoutMs`; an out-of-process backend that has not answered by
@@ -518,9 +524,26 @@ proc sendInput(r: var Run; s: Step; sr: var StepResult): float =
       sleep(25)
 
 proc settle(r: var Run; s: Step) =
+  ## `settled` after an input. A backend that reports progress is asked again
+  ## while the application is still changing when a wait ends — a heavy redraw
+  ## on a loaded machine is not a hang — up to the cap; one that ends a wait
+  ## without progress, or a backend that does not report it, fails the step
+  ## after `settleTimeoutMs`, as before.
   if not s.settle: return
-  if not r.b.await("settled", "", r.opts.settleTimeoutMs):
-    fail("the application did not settle within " & $r.opts.settleTimeoutMs & " ms after the input")
+  if r.b.awaitProgress == nil:
+    if not r.b.await("settled", "", r.opts.settleTimeoutMs):
+      fail("the application did not settle within " & $r.opts.settleTimeoutMs & " ms after the input")
+    return
+  let started = r.ms
+  while true:
+    let left = float(r.opts.settleCapMs) - (r.ms - started)
+    let o = r.b.awaitProgress("settled", "", max(1, min(r.opts.settleTimeoutMs, int(left))))
+    if o.met: return
+    if not o.progress:
+      fail("the application did not settle within " & $r.opts.settleTimeoutMs & " ms after the input")
+    if r.ms - started >= float(r.opts.settleCapMs):
+      fail("the application did not settle within " & $r.opts.settleCapMs &
+           " ms after the input: it was still changing (the settle cap)")
 
 proc waitStep(r: var Run; s: Step; observed: var JsonNode) =
   let timeout = (if s.timeout >= 0: int(s.timeout) else: r.opts.timeoutMs)
@@ -710,6 +733,8 @@ proc runScenario*(sc: Scenario; pack: Pack; b: Backend; options: RunOptions): Ru
   if r.opts.volatileProbeMs <= 0: r.opts.volatileProbeMs = 1200
   if r.opts.timeoutMs <= 0: r.opts.timeoutMs = 5000
   if r.opts.settleTimeoutMs <= 0: r.opts.settleTimeoutMs = 5000
+  if r.opts.settleCapMs <= 0: r.opts.settleCapMs = DefaultSettleCapMs
+  r.opts.settleCapMs = max(r.opts.settleCapMs, r.opts.settleTimeoutMs)
   if r.opts.stageTimeoutMs <= 0: r.opts.stageTimeoutMs = DefaultStageTimeoutMs
   let opts = r.opts
   r.res = RunResult(scenario: sc.name, mode: r.opts.mode, seed: opts.seed, runDir: opts.runDir)

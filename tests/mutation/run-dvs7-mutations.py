@@ -3,7 +3,9 @@
 
 Each arm is a defect in where a recording goes, which runs are kept, what a
 deterministic capture checks, how a citation resolves, how a lane judges its
-runs, what a passing run keeps of its captures, or a stage call's time limit;
+runs, what a passing run keeps of its captures, a stage call's time limit, or
+how long the settle after an input waits while the application is still
+changing;
 the kill command builds the binaries and runs the recordings suite (real runs
 of the reference backend, in process and over JSON lines).
 """
@@ -54,6 +56,15 @@ ARMS = [
     Arm("C15", CLI, "                                                  stageTimeoutMs: stageTimeoutMs))",
         "                                                  stageTimeoutMs: 0))",
         "a lane's stage-timeout ignored"),
+    Arm("C16", R, "  if r.b.awaitProgress == nil:\n", "  if true:\n",
+        "reported progress ignored: the settle fails at the settle timeout, as the fixed bound did"),
+    Arm("C17", R, "    if r.ms - started >= float(r.opts.settleCapMs):",
+        "    if false:", "no settle cap: an application still changing is waited on without end"),
+    Arm("C18", J, '    AwaitOutcome(met: j{"met"}.getBool, progress: j{"progress"}.getBool)',
+        '    AwaitOutcome(met: j{"met"}.getBool, progress: false)',
+        "a backend's reported progress dropped by the JSON-lines client"),
+    Arm("C19", CLI, "                                                  settleCapMs: settleCapMs,\n", "",
+        "a lane's settle-cap ignored"),
 ]
 
 if __name__ == "__main__":
