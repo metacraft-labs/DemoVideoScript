@@ -48,6 +48,12 @@ type
     button*: MouseButton
     row*, col*: int       ## pointer events: 0-based cell
     wheelUp*: bool
+    time*: int64
+      ## When the window system says the event happened, in ms on its own
+      ## clock; 0 when the front-end does not know. A double-click is timed
+      ## on it when it is known: two clicks the window system delivered
+      ## 200 ms apart are a double-click even when a redraw kept the second
+      ## waiting in the queue, and the application handles it later.
 
   Rect* = object
     row*, col*, w*, h*: int
@@ -512,7 +518,7 @@ proc handlePointer(app: App; e: InputEvent) =
       app.dragFrom = ""
       app.dragging = false
     if e.row == app.pressRow and e.col == app.pressCol:
-      let t = app.now
+      let t = (if e.time > 0: e.time else: app.now)
       var count = 1
       if e.button == mbLeft and t - app.lastClickAt <= DoubleClickMs and
           app.lastClickCell == (e.row, e.col):

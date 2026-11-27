@@ -37,6 +37,7 @@ type
     xkey: XKeyEvent
     pad: array[24, clong]
   XButtonEvent {.importc: "XButtonEvent", header: "<X11/Xlib.h>".} = object
+    time: culong                  ## the server's timestamp, ms
     x, y: cint
     state: cuint
     button: cuint
@@ -220,8 +221,11 @@ proc main() =
                                   mods: mods(ev.xbutton.state)))
         else:
           let btn = (if b == 1: mbLeft elif b == 2: mbMiddle elif b == 3: mbRight else: mbNone)
+          # the server's time, not the time this loop gets to the event: a
+          # redraw can keep the second click of a double-click waiting
           app.handle(InputEvent(kind: (if ev.theType == ButtonPress: evPress else: evRelease),
-                                row: row, col: col, button: btn, mods: mods(ev.xbutton.state)))
+                                row: row, col: col, button: btn, mods: mods(ev.xbutton.state),
+                                time: max(1'i64, int64(ev.xbutton.time))))
       of MotionNotify:
         let (row, col) = cellOf(ev.xmotion.x, ev.xmotion.y)
         let st = ev.xmotion.state
