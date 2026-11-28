@@ -209,6 +209,19 @@ suite "the settle timeout":
     check code == 1
     check "did not settle within 5000 ms after the input: it was still changing" in o
 
+  test "a settle at the cap says what the backend last saw":
+    # `quiet-unsettled`: unchanged, but never for the quiet span; the message
+    # carries the backend's own reading rather than "still changing"
+    let build = scratch("settle6")
+    defer: removeDir(build)
+    let (o, code) = run(["run", scenario, "--pack", pack, "--backend", "cmd:" & broken & " quiet-unsettled",
+                         "--build", build, "--settle-timeout", "1000", "--settle-cap", "3000"])
+    checkpoint o
+    check code == 1
+    check "did not settle within 3000 ms after the input (the settle cap): it was unchanged for " &
+          "the last 250 ms of the wait, short of the 300 ms quiet span" in o
+    check "still changing" notin o
+
   test "a lane's settle-cap reaches its runs":
     # a cap is never shorter than the settle timeout, so the lane shortens both
     let build = scratch("settle5")

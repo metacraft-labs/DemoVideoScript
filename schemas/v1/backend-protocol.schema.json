@@ -306,6 +306,9 @@
         },
         "progress": {
           "type": "boolean"
+        },
+        "reason": {
+          "type": "string"
         }
       }
     },

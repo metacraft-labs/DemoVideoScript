@@ -421,8 +421,10 @@ def protocol_schema():
                                "properties": {"geometry": {"$ref": "#/$defs/geometry"}}}},
                    ["values"]),
         # progress: not met, but still progressing at the deadline (the
-        # window was still changing): a longer wait may meet it
-        "await": ok({"met": {"type": "boolean"}, "progress": {"type": "boolean"}}, ["met"]),
+        # window was still changing): a longer wait may meet it; reason: what
+        # the backend last observed, for the message of a settle at its cap
+        "await": ok({"met": {"type": "boolean"}, "progress": {"type": "boolean"},
+                     "reason": {"type": "string"}}, ["met"]),
         "resolve-chord": ok({"chord": {"type": ["string", "null"]}}, ["chord"]),
         "hit": ok({"locator": {"type": ["string", "null"]}}, ["locator"]),
         "record": ok({"files": {"type": "array", "items": {"type": "string"}}}, ["files"]),

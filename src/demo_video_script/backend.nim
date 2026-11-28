@@ -72,6 +72,11 @@ type
     progress*: bool
       ## Not met, but still progressing at the deadline. Always false when
       ## `met`.
+    reason*: string
+      ## With `progress`: what the backend last observed, in a few words
+      ## ("it was still changing …", "it was unchanged for the last 200 ms, short
+      ## of …"), for the message of a settle that reaches the cap; "" when it
+      ## does not say.
 
   Backend* = ref object
     ## One backend session. Every proc may raise `BackendError`.

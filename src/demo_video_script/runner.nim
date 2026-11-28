@@ -542,8 +542,11 @@ proc settle(r: var Run; s: Step) =
     if not o.progress:
       fail("the application did not settle within " & $r.opts.settleTimeoutMs & " ms after the input")
     if r.ms - started >= float(r.opts.settleCapMs):
+      # what the backend last saw, when it says (still changing, or unchanged
+      # but not for long enough), else the generic reading of its progress
       fail("the application did not settle within " & $r.opts.settleCapMs &
-           " ms after the input: it was still changing (the settle cap)")
+           " ms after the input" & (if o.reason.len > 0: " (the settle cap): " & o.reason
+                                    else: ": it was still changing (the settle cap)"))
 
 proc waitStep(r: var Run; s: Step; observed: var JsonNode) =
   let timeout = (if s.timeout >= 0: int(s.timeout) else: r.opts.timeoutMs)

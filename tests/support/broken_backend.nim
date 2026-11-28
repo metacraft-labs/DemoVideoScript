@@ -6,7 +6,7 @@
 ## way, so that the runner's handling of a broken backend is exercised over a
 ## real pipe.
 ##
-##   broken_backend non-json|exit|exit-later|silent|wrong-id|unsettled|slow-stage|slow-settle
+##   broken_backend non-json|exit|exit-later|silent|wrong-id|unsettled|slow-stage|slow-settle|quiet-unsettled
 ##
 ## `exit-later` works for the first step that locates a target and exits, as
 ## `exit` does, at the second: the backend dies in the middle of a scenario,
@@ -22,6 +22,11 @@
 ## Its `settled` waits as a backend's does, until the deadline or the settle,
 ## and reports the application still changing (`progress`) when the deadline
 ## comes first: past a fixed 5 s bound, and within the runner's settle cap.
+##
+## `quiet-unsettled` is a backend whose window stops changing but never stays
+## unchanged for long enough to settle, as when every capture takes most of
+## the wait: it reports progress with what it saw, which the runner's message
+## at the settle cap repeats.
 ##
 ## `slow-stage` is a backend whose stage takes 1.5 s, as one that records a
 ## program or starts a large application takes long; after it, it works. Its stage
@@ -56,7 +61,8 @@ while stdin.readLine(line):
     echo $(%*{"id": id, "ok": true})
   of "locate":
     inc locates
-    if mode in ["unsettled", "slow-stage", "slow-settle"] or mode == "exit-later" and locates == 1:
+    if mode in ["unsettled", "slow-stage", "slow-settle", "quiet-unsettled"] or
+        mode == "exit-later" and locates == 1:
       echo $(%*{"id": id, "ok": true, "outcome": "one", "instance": "0", "role": "search-field"})
       stdout.flushFile()
       continue
@@ -72,7 +78,11 @@ while stdin.readLine(line):
     lastInput = getMonoTime()
     echo $(%*{"id": id, "ok": true})
   of "await":
-    if mode == "slow-settle":
+    if mode == "quiet-unsettled":
+      sleep(req{"timeoutMs"}.getInt(5000))
+      echo $(%*{"id": id, "ok": true, "met": false, "progress": true,
+                "reason": "it was unchanged for the last 250 ms of the wait, short of the 300 ms quiet span"})
+    elif mode == "slow-settle":
       let left = RedrawMs - (getMonoTime() - lastInput).inMilliseconds
       let timeout = req{"timeoutMs"}.getInt(5000)
       if left <= timeout:

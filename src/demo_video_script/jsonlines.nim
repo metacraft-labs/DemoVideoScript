@@ -172,7 +172,7 @@ proc spawnJsonLinesBackend*(command: string; args: seq[string] = @[]; workDir = 
   result.awaitProgress = proc (condition, instance: string; timeoutMs: int): AwaitOutcome =
     let j = c.call("await", %*{"condition": condition, "instance": instance,
                                "timeoutMs": timeoutMs}, timeoutMs + 10_000)
-    AwaitOutcome(met: j{"met"}.getBool, progress: j{"progress"}.getBool)
+    AwaitOutcome(met: j{"met"}.getBool, progress: j{"progress"}.getBool, reason: j{"reason"}.getStr)
   result.record = proc (op: RecordOp; args: JsonNode): JsonNode =
     var a = (if args == nil: newJObject() else: args.copy)
     a["op"] = %($op)
@@ -239,7 +239,9 @@ proc dispatch*(b: Backend; req: JsonNode): JsonNode =
         let o = b.awaitProgress(req{"condition"}.getStr, req{"instance"}.getStr,
                                 req{"timeoutMs"}.getInt(5000))
         res["met"] = %o.met
-        if not o.met and o.progress: res["progress"] = %true
+        if not o.met and o.progress:
+          res["progress"] = %true
+          if o.reason.len > 0: res["reason"] = %o.reason
       else:
         res["met"] = %b.await(req{"condition"}.getStr, req{"instance"}.getStr,
                               req{"timeoutMs"}.getInt(5000))

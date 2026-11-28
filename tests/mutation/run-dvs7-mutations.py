@@ -60,11 +60,15 @@ ARMS = [
         "reported progress ignored: the settle fails at the settle timeout, as the fixed bound did"),
     Arm("C17", R, "    if r.ms - started >= float(r.opts.settleCapMs):",
         "    if false:", "no settle cap: an application still changing is waited on without end"),
-    Arm("C18", J, '    AwaitOutcome(met: j{"met"}.getBool, progress: j{"progress"}.getBool)',
-        '    AwaitOutcome(met: j{"met"}.getBool, progress: false)',
+    Arm("C18", J, 'AwaitOutcome(met: j{"met"}.getBool, progress: j{"progress"}.getBool,',
+        'AwaitOutcome(met: j{"met"}.getBool, progress: false,',
         "a backend's reported progress dropped by the JSON-lines client"),
     Arm("C19", CLI, "                                                  settleCapMs: settleCapMs,\n", "",
         "a lane's settle-cap ignored"),
+    Arm("C20", J, ', reason: j{"reason"}.getStr)', ")",
+        "the backend's reading of a settle dropped by the JSON-lines client"),
+    Arm("C21", R, '" ms after the input" & (if o.reason.len > 0:', '" ms after the input" & (if false:',
+        "the settle cap's message ignoring what the backend last saw"),
 ]
 
 if __name__ == "__main__":

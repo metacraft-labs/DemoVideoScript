@@ -99,7 +99,8 @@ application makes no progress towards it for the settle timeout (`--settle-timeo
 default 5 s). A backend that reports progress (its `await` answers `progress: true`
 while the window is still changing) is waited on for longer, up to the settle cap
 (`--settle-cap`, default 60 s), so a slow redraw on a loaded machine is not taken for a
-hang. The client actions that load a
+hang. A settle that reaches the cap fails with what the backend last saw, when it says
+(its `await` answer's `reason`): still changing, or unchanged but not for long enough. The client actions that load a
 page (`open-client`, `reload`, `duplicate`) are followed by `settled` too and take
 `settle: false` the same way: an application can take longer to load than any settle limit
 an input deserves, and the scenario then waits for what the loaded page shows.
