@@ -105,6 +105,8 @@
                 prek
                 uv
                 shellcheck
+                # the upload-failed-runs action's test makes and decodes recordings
+                ffmpeg
               ]
               # the conformance application's native-window build (notes-x11)
               ++ lib.optionals stdenv.isLinux [ xorg.libX11 ];

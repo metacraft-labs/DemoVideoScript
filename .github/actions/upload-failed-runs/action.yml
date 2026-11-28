@@ -2,7 +2,8 @@ name: Upload failed scenario runs
 description: >-
   Uploads the run directories of failed DemoVideoScript runs (the ones with a failure/
   directory) under <build-dir>/scenario-runs as one job artifact. Passing runs and the
-  rest of the build directory are not uploaded.
+  rest of the build directory are not uploaded. Beside each lossless recording
+  (session*.mkv) the artifact carries a copy a browser plays (session*.mp4); see README.md.
 inputs:
   build-dir:
     description: The build directory the runs were recorded under.
@@ -22,17 +23,7 @@ runs:
       run: |
         set -euo pipefail
         out="$RUNNER_TEMP/failed-scenario-runs"
-        rm -rf "$out"; mkdir -p "$out"
-        found=0
-        if [ -d "${{ inputs.build-dir }}/scenario-runs" ]; then
-          while IFS= read -r -d '' f; do
-            run="$(dirname "$f")"
-            rel="${run#"${{ inputs.build-dir }}/scenario-runs/"}"
-            mkdir -p "$out/$rel"
-            cp -R "$run/." "$out/$rel/"
-            found=$((found + 1))
-          done < <(find "${{ inputs.build-dir }}/scenario-runs" -mindepth 4 -maxdepth 4 -type d -name failure -print0)
-        fi
+        found="$(bash "$GITHUB_ACTION_PATH/collect.sh" "${{ inputs.build-dir }}" "$out" | sed -n 's/^found=//p')"
         echo "failed scenario runs: $found"
         echo "dir=$out" >> "$GITHUB_OUTPUT"
         echo "found=$found" >> "$GITHUB_OUTPUT"

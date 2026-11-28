@@ -38,7 +38,7 @@ build-web:
 
 # Unit suites, the command-line suite against the built binary, and the
 # schema/parser agreement check against independent reference implementations.
-test: build test-unit test-cli test-schema-agreement test-neutrality-self test-runner test-recordings test-protocol test-conformance
+test: build test-unit test-cli test-schema-agreement test-neutrality-self test-runner test-recordings test-protocol test-conformance test-actions
 
 test-unit:
     @mkdir -p {{build_dir}}/test-bin
@@ -121,3 +121,7 @@ format-schemas:
 
 clean:
     rm -rf {{build_dir}}
+
+# The upload-failed-runs action's collect step, on real recordings (needs ffmpeg).
+test-actions:
+    bash tests/upload_failed_runs_test.sh
