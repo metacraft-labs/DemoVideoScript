@@ -67,6 +67,8 @@ ARMS = [
     Arm("J2", J, "        c.dead = true\n        c.drainErr()",
         "        c.dead = false\n        c.drainErr()\n        return \"\"",
         "a backend's exit read as an empty answer"),
+    Arm("J3", J, "  max(floorMs, configuredMs)", "  floorMs",
+        "a call's own limit caps the run's DVS_BACKEND_TIMEOUT_MS"),
     Arm("A1", A, "    if st.stageClosed:", "    if false:", "the backend accepts stage calls after end-stage"),
 ]
 

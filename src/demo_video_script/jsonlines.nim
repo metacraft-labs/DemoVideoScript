@@ -36,6 +36,15 @@ proc defaultCallTimeoutMs(): int =
   ## `DVS_BACKEND_TIMEOUT_MS` overrides the 30 s default.
   try: parseInt(getEnv("DVS_BACKEND_TIMEOUT_MS", "30000")) except ValueError: 30_000
 
+proc callLimitMs*(floorMs, configuredMs: int): int =
+  ## How long a call that does a step's work may take (`send`, `record`,
+  ## `act`, `client`): at least `floorMs`, and as long as the run allows
+  ## (`DVS_BACKEND_TIMEOUT_MS`) when that is longer. A recording's stop that
+  ## finishes a long run's video can take minutes.
+  max(floorMs, configuredMs)
+
+const StepCallFloorMs = 120_000
+
 proc crashed(c: Conn; msg: string): ref BackendError =
   var log = c.errBuf.strip
   if log.len > 2000: log = "…" & log[^2000 .. ^1]
@@ -91,7 +100,7 @@ proc readLine(c: Conn; timeoutMs: int; limitHint = ""): string =
 
 proc call(c: Conn; name: string; args: JsonNode; timeoutMs = -1; limitHint = ""): JsonNode =
   if c.dead: raise c.crashed("is no longer running")
-  let timeoutMs = (if timeoutMs < 0: defaultCallTimeoutMs() else: min(timeoutMs, max(defaultCallTimeoutMs(), timeoutMs)))
+  let timeoutMs = (if timeoutMs < 0: defaultCallTimeoutMs() else: timeoutMs)
   inc c.nextId
   var req = (if args == nil: newJObject() else: args.copy)
   req["id"] = %c.nextId
@@ -154,16 +163,16 @@ proc spawnJsonLinesBackend*(command: string; args: seq[string] = @[]; workDir = 
   result.read = proc (instance: string; properties: seq[string]): JsonNode =
     c.call("read", %*{"instance": instance, "properties": properties}){"values"}
   result.send = proc (action: JsonNode) =
-    discard c.call("send", %*{"action": action}, 120_000)
+    discard c.call("send", %*{"action": action}, callLimitMs(StepCallFloorMs, defaultCallTimeoutMs()))
   result.await = proc (condition, instance: string; timeoutMs: int): bool =
     c.call("await", %*{"condition": condition, "instance": instance, "timeoutMs": timeoutMs},
            timeoutMs + 10_000){"met"}.getBool
   result.record = proc (op: RecordOp; args: JsonNode): JsonNode =
     var a = (if args == nil: newJObject() else: args.copy)
     a["op"] = %($op)
-    c.call("record", a, 120_000)
+    c.call("record", a, callLimitMs(StepCallFloorMs, defaultCallTimeoutMs()))
   result.act = proc (use: string; args: JsonNode) =
-    discard c.call("act", %*{"use": use, "with": (if args == nil: newJObject() else: args)}, 120_000)
+    discard c.call("act", %*{"use": use, "with": (if args == nil: newJObject() else: args)}, callLimitMs(StepCallFloorMs, defaultCallTimeoutMs()))
   result.client = proc (op: string; args: JsonNode) =
     var a = (if args == nil: newJObject() else: args.copy)
     a["op"] = %op
@@ -171,7 +180,7 @@ proc spawnJsonLinesBackend*(command: string; args: seq[string] = @[]; workDir = 
     # which a browser backend allows minutes on a loaded machine (the
     # Playwright arm's `OPEN_WAIT`, 600 s): at 120 s the runner gave up on a
     # duplicate the arm was still loading, at load ~140.
-    discard c.call("client", a, ClientCallTimeoutMs)
+    discard c.call("client", a, callLimitMs(ClientCallTimeoutMs, defaultCallTimeoutMs()))
   result.hit = proc (x, y: float): Option[string] =
     let j = c.call("hit", %*{"x": x, "y": y})
     if j{"locator"}.kind == JString: some(j["locator"].getStr) else: none(string)

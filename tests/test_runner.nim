@@ -363,6 +363,15 @@ suite "recordings":
     check c["geometry"]["w"].getFloat > 0
 
 suite "the JSON-lines transport":
+  test "a raised DVS_BACKEND_TIMEOUT_MS raises a step call's limit, and a lower one never lowers it":
+    # send, record and act wait at least 120 s (client: its load wait), and
+    # as long as the run allows when it allows more: a recording's stop that
+    # finishes a long run's video took longer than 120 s, and the run was cut
+    # short with DVS_BACKEND_TIMEOUT_MS at 600 000. A stage call keeps its own
+    # limit, --stage-timeout, lower or higher.
+    check callLimitMs(120_000, 600_000) == 600_000
+    check callLimitMs(120_000, 30_000) == 120_000
+
   for mode in ["non-json", "exit", "silent", "wrong-id"]:
     test "a backend that answers '" & mode & "' yields an error naming it":
       let r = runJson(root / "tests/runner/broken-backend.yaml", "cmd:" & broken & " " & mode,
