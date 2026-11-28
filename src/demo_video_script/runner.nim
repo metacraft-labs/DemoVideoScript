@@ -372,7 +372,7 @@ const RelocateAttempts = 5
 proc checkObservation(r: var Run; o: Observation; observed: var JsonNode): string =
   ## The observation, located afresh when the window redrew between the
   ## locate and the read: a backend reads a fresh surface for every read, and
-  ## a pane that re-laid itself out in between leaves the instance it handed
+  ## an element that re-laid itself out in between leaves the instance it handed
   ## out gone (`not-found`). That is the window changing, not the scenario
   ## failing; the target is located again, a few times, before it counts.
   for attempt in 1 .. RelocateAttempts:

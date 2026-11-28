@@ -38,7 +38,7 @@ build-web:
 
 # Unit suites, the command-line suite against the built binary, and the
 # schema/parser agreement check against independent reference implementations.
-test: build test-unit test-cli test-schema-agreement test-neutrality-self test-runner test-recordings test-protocol test-conformance test-actions
+test: build test-unit test-cli test-schema-agreement test-neutrality-self test-neutrality test-runner test-recordings test-protocol test-conformance test-actions
 
 test-unit:
     @mkdir -p {{build_dir}}/test-bin
@@ -107,6 +107,10 @@ lint-corpus: build
 
 lint-neutrality:
     bash tests/neutrality_scan.sh
+
+# The neutrality scan over every tracked file, as a test: the self-test alone
+# shows the scan works, not that the tree passes it.
+test-neutrality: lint-neutrality
 
 lint-nix:
     nixfmt --check flake.nix

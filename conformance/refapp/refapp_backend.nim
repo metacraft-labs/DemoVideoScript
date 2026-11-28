@@ -503,7 +503,7 @@ proc clientOp(st: RefappState; op: string; args: JsonNode) =
 proc newRefappBackend*(defect: PlantedDefect = dfNone; without: seq[string] = @[];
                        churning = false): Backend =
   ## `churning`: not a defect. A real window can redraw between the runner's
-  ## locate and its read (a pane that re-lays itself out after an input, or
+  ## locate and its read (an element that re-lays itself out after an input, or
   ## while a build runs), and the instance it located is then gone. The
   ## churning backend answers the first read, and the first input aimed at an
   ## instance, after the launch and after every input so, as such a window

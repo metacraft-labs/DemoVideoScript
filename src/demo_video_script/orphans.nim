@@ -1,7 +1,7 @@
 ## What a backend leaves behind does not outlive the run (Linux).
 ##
 ## A backend's helpers — the ChromeDriver WebDriverIO starts DETACHED, the
-## editor or server a binding starts — are its children. When the backend
+## application or server a binding starts — are its children. When the backend
 ## ends without stopping them (the runner gives it a few seconds after
 ## `shutdown`, then a SIGTERM; a crashed backend gets none), they are
 ## reparented and keep running, with their browsers, until someone notices:
@@ -17,13 +17,13 @@
 ## stopped. `DVS_KEEP_ORPHANS=1` turns both off.
 ##
 ## A TRACED orphan is not a detached helper and is left to its tracer. A
-## debugger or recorder that forks its tracees' processes reparents them here
+## tracer that forks its tracees' processes reparents them here
 ## whenever their parent goes: rr keeps a replay's checkpoints as forks of the
 ## replayed process, and when it moves the replay on it kills the old process
 ## and keeps using the fork, which is then this process's child in another
 ## session (the desktop's). Stopped by the reaper, rr's replay died in the
-## middle of a scenario ("Tracee died unexpectedly", codetracer-specs issue
-## 2026-11-15, "rr dies restarting a replay in the desktop"). The tracer owns
+## middle of a scenario ("Tracee died unexpectedly"; the orphan-reaping issue
+## of 2026-11-15, "rr dies restarting a replay"). The tracer owns
 ## such a process and ends it (rr's tracees die with rr); the exit pass below
 ## still stops whatever is left.
 
@@ -60,7 +60,7 @@ when defined(linux):
       if info.pid > 0: result.add info
 
   proc traced(pid: int): bool =
-    ## A tracer (a debugger, a recorder) is attached: `TracerPid` in
+    ## A tracer (a recorder, say) is attached: `TracerPid` in
     ## /proc/<pid>/status is not 0.
     try:
       for line in lines("/proc/" & $pid & "/status"):

@@ -201,7 +201,7 @@ suite "the runner on the reference backend":
 
   test "a window that redraws between a locate and a read or an input: located again, not failed":
     # refapp-churning answers the first read and the first aimed input after
-    # every input with not-found, as a pane that re-laid itself out does; the
+    # every input with not-found, as an element that re-laid itself out does; the
     # observation or input locates its target again. A wait that never holds
     # still fails as one.
     for f in toSeq(walkFiles(root / "conformance/scenarios/*.yaml")):
