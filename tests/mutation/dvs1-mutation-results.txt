@@ -1,81 +1,81 @@
-# dvs1 mutation results — 2026-11-12 23:20:31 +0200
+# dvs1 mutation results — 2026-11-28 10:10:41 +0200
 # kill command: just test
 
-KILLED   G1      102.4s  a modifier dropped from a parsed chord
+KILLED   G1      229.5s  a modifier dropped from a parsed chord
            | cp conformance/app/web/index.html $BUILD_DIR/web/index.html
            | Error: execution of an external program failed: '$BUILD_DIR/test-bin/test_grammar'
            | error: Recipe `test-unit` failed on line 48 with exit code 1
-KILLED   G2       80.3s  Mod resolved to the wrong platform key
+KILLED   G2      100.2s  Mod resolved to the wrong platform key
            | cp conformance/app/web/index.html $BUILD_DIR/web/index.html
            | Error: execution of an external program failed: '$BUILD_DIR/test-bin/test_grammar'
            | error: Recipe `test-unit` failed on line 48 with exit code 1
-KILLED   G3       88.6s  a locator key parsed as an ordinal
+KILLED   G3       51.1s  a locator key parsed as an ordinal
            | cp conformance/app/web/index.html $BUILD_DIR/web/index.html
            | Error: execution of an external program failed: '$BUILD_DIR/test-bin/test_grammar'
            | error: Recipe `test-unit` failed on line 48 with exit code 1
-KILLED   S1      238.6s  the version check removed
+KILLED   S1      142.3s  the version check removed
            | DVS_BIN=$BUILD_DIR/bin/dvs nim c -r --hints:off --styleCheck:usages --styleCheck:error --path:src --nimcache:$BUILD_DIR/nimcache/test_cli -o:$BUILD_DIR/test-bin
            | Error: execution of an external program failed: '$BUILD_DIR/test-bin/test_cli'
            | error: Recipe `test-cli` failed on line 53 with exit code 1
-KILLED   S2       92.6s  L1: an unknown step key accepted
+KILLED   S2      142.0s  L1: an unknown step key accepted
            | DVS_BIN=$BUILD_DIR/bin/dvs nim c -r --hints:off --styleCheck:usages --styleCheck:error --path:src --nimcache:$BUILD_DIR/nimcache/test_cli -o:$BUILD_DIR/test-bin
            | Error: execution of an external program failed: '$BUILD_DIR/test-bin/test_cli'
            | error: Recipe `test-cli` failed on line 53 with exit code 1
-KILLED   S3       87.3s  L1: a stage call in steps no longer named as one
+KILLED   S3      173.9s  L1: a stage call in steps no longer named as one
            | DVS_BIN=$BUILD_DIR/bin/dvs nim c -r --hints:off --styleCheck:usages --styleCheck:error --path:src --nimcache:$BUILD_DIR/nimcache/test_cli -o:$BUILD_DIR/test-bin
            | Error: execution of an external program failed: '$BUILD_DIR/test-bin/test_cli'
            | error: Recipe `test-cli` failed on line 53 with exit code 1
-KILLED   L2       82.8s  L2: a locator key that is not a declared key accepted
+KILLED   L2      160.3s  L2: a locator key that is not a declared key accepted
            | DVS_BIN=$BUILD_DIR/bin/dvs nim c -r --hints:off --styleCheck:usages --styleCheck:error --path:src --nimcache:$BUILD_DIR/nimcache/test_cli -o:$BUILD_DIR/test-bin
            | Error: execution of an external program failed: '$BUILD_DIR/test-bin/test_cli'
            | error: Recipe `test-cli` failed on line 53 with exit code 1
-KILLED   L2p     104.9s  L2: an undeclared property observed
+KILLED   L2p      95.5s  L2: an undeclared property observed
            | DVS_BIN=$BUILD_DIR/bin/dvs nim c -r --hints:off --styleCheck:usages --styleCheck:error --path:src --nimcache:$BUILD_DIR/nimcache/test_cli -o:$BUILD_DIR/test-bin
            | Error: execution of an external program failed: '$BUILD_DIR/test-bin/test_cli'
            | error: Recipe `test-cli` failed on line 53 with exit code 1
-KILLED   L3       94.8s  L3: the affordance check removed
+KILLED   L3      156.4s  L3: the affordance check removed
            | DVS_BIN=$BUILD_DIR/bin/dvs nim c -r --hints:off --styleCheck:usages --styleCheck:error --path:src --nimcache:$BUILD_DIR/nimcache/test_cli -o:$BUILD_DIR/test-bin
            | Error: execution of an external program failed: '$BUILD_DIR/test-bin/test_cli'
            | error: Recipe `test-cli` failed on line 53 with exit code 1
-KILLED   L4       86.6s  L4: an ordinal accepted without a warning
+KILLED   L4       99.7s  L4: an ordinal accepted without a warning
            | DVS_BIN=$BUILD_DIR/bin/dvs nim c -r --hints:off --styleCheck:usages --styleCheck:error --path:src --nimcache:$BUILD_DIR/nimcache/test_cli -o:$BUILD_DIR/test-bin
            | Error: execution of an external program failed: '$BUILD_DIR/test-bin/test_cli'
            | error: Recipe `test-cli` failed on line 53 with exit code 1
-KILLED   L5       69.1s  L5: the settle condition inverted
+KILLED   L5       50.2s  L5: the settle condition inverted
            | DVS_BIN=$BUILD_DIR/bin/dvs nim c -r --hints:off --styleCheck:usages --styleCheck:error --path:src --nimcache:$BUILD_DIR/nimcache/test_cli -o:$BUILD_DIR/test-bin
            | Error: execution of an external program failed: '$BUILD_DIR/test-bin/test_cli'
            | error: Recipe `test-cli` failed on line 53 with exit code 1
-KILLED   L6       97.4s  L6: a dwell before an observation not warned
+KILLED   L6       45.9s  L6: a dwell before an observation not warned
            | DVS_BIN=$BUILD_DIR/bin/dvs nim c -r --hints:off --styleCheck:usages --styleCheck:error --path:src --nimcache:$BUILD_DIR/nimcache/test_cli -o:$BUILD_DIR/test-bin
            | Error: execution of an external program failed: '$BUILD_DIR/test-bin/test_cli'
            | error: Recipe `test-cli` failed on line 53 with exit code 1
-KILLED   L7       82.3s  L7: an undeclared sync condition accepted
+KILLED   L7       74.2s  L7: an undeclared sync condition accepted
            | DVS_BIN=$BUILD_DIR/bin/dvs nim c -r --hints:off --styleCheck:usages --styleCheck:error --path:src --nimcache:$BUILD_DIR/nimcache/test_cli -o:$BUILD_DIR/test-bin
            | Error: execution of an external program failed: '$BUILD_DIR/test-bin/test_cli'
            | error: Recipe `test-cli` failed on line 53 with exit code 1
-KILLED   L8       78.6s  L8: an extension step without its backend accepted
+KILLED   L8       69.4s  L8: an extension step without its backend accepted
            | DVS_BIN=$BUILD_DIR/bin/dvs nim c -r --hints:off --styleCheck:usages --styleCheck:error --path:src --nimcache:$BUILD_DIR/nimcache/test_cli -o:$BUILD_DIR/test-bin
            | Error: execution of an external program failed: '$BUILD_DIR/test-bin/test_cli'
            | error: Recipe `test-cli` failed on line 53 with exit code 1
-KILLED   L9       69.5s  L9: a dangling narration anchor accepted
+KILLED   L9       52.1s  L9: a dangling narration anchor accepted
            | DVS_BIN=$BUILD_DIR/bin/dvs nim c -r --hints:off --styleCheck:usages --styleCheck:error --path:src --nimcache:$BUILD_DIR/nimcache/test_cli -o:$BUILD_DIR/test-bin
            | Error: execution of an external program failed: '$BUILD_DIR/test-bin/test_cli'
            | error: Recipe `test-cli` failed on line 53 with exit code 1
-KILLED   L10      83.6s  L10: a role named like a keyword accepted
+KILLED   L10      83.2s  L10: a role named like a keyword accepted
            | DVS_BIN=$BUILD_DIR/bin/dvs nim c -r --hints:off --styleCheck:usages --styleCheck:error --path:src --nimcache:$BUILD_DIR/nimcache/test_cli -o:$BUILD_DIR/test-bin
            | Error: execution of an external program failed: '$BUILD_DIR/test-bin/test_cli'
            | error: Recipe `test-cli` failed on line 53 with exit code 1
-KILLED   L11      64.8s  L11: a flow violating L1 accepted
+KILLED   L11      84.8s  L11: a flow violating L1 accepted
            | DVS_BIN=$BUILD_DIR/bin/dvs nim c -r --hints:off --styleCheck:usages --styleCheck:error --path:src --nimcache:$BUILD_DIR/nimcache/test_cli -o:$BUILD_DIR/test-bin
            | Error: execution of an external program failed: '$BUILD_DIR/test-bin/test_cli'
            | error: Recipe `test-cli` failed on line 53 with exit code 1
-KILLED   L12      55.2s  L12: duplicate capture names accepted
+KILLED   L12      98.4s  L12: duplicate capture names accepted
            | DVS_BIN=$BUILD_DIR/bin/dvs nim c -r --hints:off --styleCheck:usages --styleCheck:error --path:src --nimcache:$BUILD_DIR/nimcache/test_cli -o:$BUILD_DIR/test-bin
            | Error: execution of an external program failed: '$BUILD_DIR/test-bin/test_cli'
            | error: Recipe `test-cli` failed on line 53 with exit code 1
-KILLED   SC1      67.0s  the published schema's steps relaxed to accept unknown keys
+KILLED   SC1     103.2s  the published schema's steps relaxed to accept unknown keys
            | DVS_BIN=$BUILD_DIR/bin/dvs nim c -r --hints:off --styleCheck:usages --styleCheck:error --path:src --nimcache:$BUILD_DIR/nimcache/test_cli -o:$BUILD_DIR/test-bin
            | python3 tests/schema_agreement.py $BUILD_DIR/bin/dvs
-           | error: Recipe `test-schema-agreement` failed on line 78 with exit code 1
+           | error: Recipe `test-schema-agreement` failed on line 79 with exit code 1
 
 19/19 killed, 0 survived
