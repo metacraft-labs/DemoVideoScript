@@ -205,10 +205,10 @@ def scenario_schema():
     isolation = {"enum": ["separate", "shared"]}
     variants.append(obj(["open-client"], {"open-client": obj(["name", "open"], {
         "name": {"$ref": "#/$defs/name"}, "open": {"$ref": "#/$defs/name"},
-        "isolation": isolation}), **annotations}))
-    variants.append(obj(["reload"], {"reload": {"$ref": "#/$defs/name"}, **annotations}))
+        "isolation": isolation}), "settle": {"type": "boolean"}, **annotations}))
+    variants.append(obj(["reload"], {"reload": {"$ref": "#/$defs/name"}, "settle": {"type": "boolean"}, **annotations}))
     variants.append(obj(["duplicate"], {"duplicate": obj(["client", "name"], {
-        "client": {"$ref": "#/$defs/name"}, "name": {"$ref": "#/$defs/name"}}), **annotations}))
+        "client": {"$ref": "#/$defs/name"}, "name": {"$ref": "#/$defs/name"}}), "settle": {"type": "boolean"}, **annotations}))
     variants.append(obj(["close-client"], {"close-client": {"$ref": "#/$defs/name"}, **annotations}))
     variants.append(obj(["act"], {"act": obj(["use"], {
         "use": {"$ref": "#/$defs/name"}, "with": {"type": "object"}}), **annotations}))
